@@ -8,7 +8,7 @@
 Smileys for other player.
 
 #### Once every round
-Cooperate / Defect.
+`{ "result": "cooperate" }` or `{ "result": "defect" }`.
 
 ### Server -> Players
 
