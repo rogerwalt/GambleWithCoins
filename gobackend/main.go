@@ -156,7 +156,7 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				return
 			}
 
-			// check what the command is; here only join is allowed
+			// check what the command is;
 			switch f["command"] {
 			case "join":
 				fmt.Println("Client wants to join")
