@@ -33,7 +33,7 @@ type ApiError struct {
 
 func sendError(ws *websocket.Conn, err ApiError) {
 	log.Printf("API Error: Code %i, \"%s\", Command \"%s\"", err.code, err.message, err.command)
-	websocket.Message.Send(ws, []byte(`{"command": "`+err.command+`", "result": { "errorCode": `+strconv.Itoa(err.code)+`, "errorMsg": "`+err.message+`"}}`))
+	websocket.Message.Send(ws, string([]byte(`{"command": "`+err.command+`", "result": { "errorCode": `+strconv.Itoa(err.code)+`, "errorMsg": "`+err.message+`"}}`)))
 }
 
 // returns a User if a user has successfully authenticated himself,
@@ -42,6 +42,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 	var msg string
 	var e ApiError
 	err := websocket.Message.Receive(ws, &msg)
+	fmt.Printf("Message: %v", msg)
 	if err != nil {
 		e.message = "Could not receive data from client:" + err.Error()
 		e.code = 98
@@ -49,7 +50,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		return nil, &e
 	}
 	log.Printf("Authenticate: Received data from client with RemoteAddr: %v", ws.RemoteAddr())
-
+	log.Printf(msg)
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 
@@ -64,7 +65,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
 				log.Println("Client logged in")
-				b := []byte(`{"command": "login", "result" : "success"}`)
+				b := string([]byte(`{"command": "login", "result" : "success"}`))
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
@@ -91,7 +92,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 				return nil, &e
 			} else {
 				log.Println("Client registered")
-				b := []byte(`{"command": "register", "result" : "success"}`)
+				b := string([]byte(`{"command": "register", "result" : "success"}`))
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
@@ -156,12 +157,12 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				ready <- user
 			case "getBalance":
 				balance, _ := masc.GetBalance(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance))
-				err = websocket.Message.Send(user.conn, b)
+				b := fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance)
+				err = websocket.Message.Send(user.conn, string(b))
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
-					address))
+				b := string([]byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address)))
 				err = websocket.Message.Send(user.conn, b)
 			case "withdraw":
 				address := f["address"].(string)
@@ -169,12 +170,11 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				err := masc.Withdraw(user.name, amount, address)
 				var b []byte
 				if err != nil {
-					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
-												{"error": "%s"}}`, err.Error()))
+					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : {"error": "%s"}}`, err.Error()))
 				} else {
 					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
 				}
-				err = websocket.Message.Send(user.conn, b)
+				err = websocket.Message.Send(user.conn, string(b))
 			}
 			<-close
 			ws.Close()
@@ -485,7 +485,7 @@ func checkError(err error) {
 
 func disconnectClient(user *User, ws *websocket.Conn) {
 	log.Println("Disconnecting client due to invalid requests.")
-	toSend, _ := json.Marshal(map[string]string{"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": strconv.Itoa(10)})
+	toSend := string([]byte(`{"result": {"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": ` + strconv.Itoa(10) + `}}`))
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
 }
