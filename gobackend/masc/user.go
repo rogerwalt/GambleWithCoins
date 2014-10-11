@@ -1,6 +1,13 @@
 package masc
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+	"os"
+	"github.com/mattn/go-sqlite3"
+)
+
+var db *sql.DB
 
 //TODO: use transactions
 
