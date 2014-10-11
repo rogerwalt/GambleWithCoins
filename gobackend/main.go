@@ -229,6 +229,8 @@ func handleGame(user1, user2 *User) {
 
 	log.Println("Received actions:")
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
+	masc.AddAction(user1.name, action1)
+	masc.AddAction(user2.name, action2)
 	err = websocket.Message.Send(user1.conn, strconv.Itoa(p1))
 	checkError(err)
 
