@@ -37,40 +37,40 @@ func TestGame(t *testing.T) {
 
 func testDatabase(t *testing.T) {
 	log.Println("Test: ----- testingDatabase() procedure -----")
-	balance, err := masc.GetBalance("foo")
+	balance, err := masc.GetBalance("foo1")
 	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
-	log.Println("Test: Balance of user foo:", balance)
+	log.Println("Test: Balance of user foo1:", balance)
 
-	log.Println("Test: Depositing 100 to user foo")
-	err = masc.UpdateBalance("foo", 100)
+	log.Println("Test: Depositing 100 to user foo1")
+	err = masc.UpdateBalance("foo1", 100)
 	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 
-	balance, err = masc.GetBalance("foo")
+	balance, err = masc.GetBalance("foo1")
 	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 	if balance == 100 {
-		log.Println("Test: Balance of user foo:", balance)
+		log.Println("Test: Balance of user foo1:", balance)
 	} else {
 		log.Println("Test: ERROR: Expected balance of 100")
 	}
 
-	log.Println("Test: Depositing -50 to user foo")
-	err = masc.UpdateBalance("foo", -50)
+	log.Println("Test: Depositing -50 to user foo1")
+	err = masc.UpdateBalance("foo1", -50)
 	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 
-	balance, err = masc.GetBalance("foo")
+	balance, err = masc.GetBalance("foo1")
 	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 	if balance == 50 {
-		log.Println("Test: Balance of user foo:", balance)
+		log.Println("Test: Balance of user foo1:", balance)
 	} else {
 		log.Println("Test: ERROR: Expected balance of 50")
 	}
