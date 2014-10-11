@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -20,10 +22,12 @@ import (
 
 type User struct {
 	name string
+	bet  int // bet of user in current round
 	conn *websocket.Conn
 }
 
 func sendError(ws *websocket.Conn, err error) {
+	log.Println("Sending error: ", err.Error())
 	toSend, _ := json.Marshal(map[string]string{"error": err.Error()})
 	websocket.Message.Send(ws, toSend)
 }
@@ -40,10 +44,23 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 
+	/*
+		fmt.Printf("Map: %v", m)
+		fmt.Printf("Name: %v", m["name"])
+		fmt.Printf("Password: %v", m["password"])
+		fmt.Println("___________________________")
+	*/
+
 	for i := 0; i < 3; i++ {
-		if m["command"].(string) == "join" {
+		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
-				return &User{m["name"].(string), ws}, nil
+				log.Println("Client logged in")
+				b := []byte(`{"command": "login", "result" : "success"}`)
+				err = websocket.Message.Send(ws, b)
+				if err != nil {
+					return nil, err
+				}
+				return &User{m["name"].(string), 0, ws}, nil
 			} else {
 				return nil, errors.New("Wrong password")
 			}
@@ -51,11 +68,19 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 			err := masc.Register(m["name"].(string), m["password"].(string))
 			if err != nil {
 				return nil, err
+			} else {
+				log.Println("Client registered")
+				b := []byte(`{"command": "register", "result" : "success"}`)
+				err = websocket.Message.Send(ws, b)
+				if err != nil {
+					return nil, err
+				}
+				return &User{m["name"].(string), 0, ws}, nil
 			}
 		}
 	}
+	disconnectClient(nil, ws)
 	return nil, errors.New("Too many unsuccessful logins")
-
 }
 
 func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
@@ -69,31 +94,54 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			return
 		}
 
-		var msg string
-		err = websocket.Message.Receive(ws, &msg)
-		checkError(err)
+		for {
+			var msg string
+			err = websocket.Message.Receive(ws, &msg)
+			checkError(err)
 
-		// interpret message as json data
-		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
-		var f map[string]interface{}
-		err = json.Unmarshal([]byte(msg), &f)
+			// interpret message as json data
+			// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
+			var f map[string]interface{}
+			err = json.Unmarshal([]byte(msg), &f)
 
-		_, commandExists := f["command"]
+			_, commandExists := f["command"]
 
-		// remove client if sends invalid data
-		if err != nil || !commandExists {
-			log.Println("Remove client due to invalid requests.")
+			// remove client if sends invalid data
+			if err != nil || !commandExists {
+				disconnectClient(user, ws)
+				return
+			}
+
+			// check what the command is; here only join is allowed
+			switch f["command"] {
+			case "join":
+				fmt.Println("Client wants to join")
+				ready <- user
+			case "getBalance":
+				balance, _ := masc.GetBalance(user.name)
+				b := []byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance))
+				err = websocket.Message.Send(user.conn, b)
+			case "getDepositAddress":
+				address, _ := masc.GetDepositAddress(user.name)
+				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address))
+				err = websocket.Message.Send(user.conn, b)
+			case "withdraw":
+				address := f["address"].(string)
+				amount := f["amount"].(int)
+				err := masc.Withdraw(user.name, amount, address)
+				var b []byte
+				if err != nil {
+					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
+												{"error": "%s"}}`, err.Error()))
+				} else {
+					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
+				}
+				err = websocket.Message.Send(user.conn, b)
+			}
+			<-close
 			ws.Close()
-			return
 		}
-
-		// check what the command is; here only join is allowed
-		if f["command"] == "join" {
-			fmt.Println("Client wants to join")
-			ready <- user
-		}
-		<-close
-		ws.Close()
 	}
 }
 
@@ -123,7 +171,7 @@ func Hub(ready chan *User) {
 				go handleGame(uWaiting, u)
 
 			} else {
-				log.Println("Appending client")
+				log.Println("Client joined")
 				waitingUsers = append(waitingUsers, u)
 			}
 		}
@@ -144,8 +192,7 @@ func handleGame(user1, user2 *User) {
 
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -153,8 +200,7 @@ func handleGame(user1, user2 *User) {
 	if str, ok := f["command"].(string); ok {
 		action1 = str
 	} else {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -169,8 +215,7 @@ func handleGame(user1, user2 *User) {
 
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
-		log.Println("Remove client due to invalid requests.")
-		user2.conn.Close()
+		disconnectClient(user2, user2.conn)
 		return
 	}
 
@@ -178,8 +223,7 @@ func handleGame(user1, user2 *User) {
 	if str, ok := f["command"].(string); ok {
 		action2 = str
 	} else {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -201,7 +245,16 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", "./masc.db")
+	serverClose := make(chan int)
+	start("./masc.db", 8080, serverClose)
+}
+
+func start(dbName string, port int, serverClose chan int) {
+	log.Println("Starting server")
+
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+
+	db, err := sql.Open("sqlite3", dbName)
 	checkError(err)
 	masc.SetupDb(db)
 	defer db.Close()
@@ -217,13 +270,40 @@ func main() {
 	})
 
 	http.Handle("/play/", websocket.Handler(makeGame(ready, close)))
-	err = http.ListenAndServe(":8080", nil)
+	s := &http.Server{
+		Addr:           fmt.Sprintf(":%d", port),
+		Handler:        nil,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	checkError(err)
+	go s.Serve(listener)
+
+	select {
+
+	case <-serverClose:
+		listener.Close()
+	}
+	return
 }
 
 func checkError(err error) {
 	if err != nil {
 		log.Println("Fatal error ", err.Error())
 		os.Exit(1)
+	}
+}
+
+func disconnectClient(user *User, ws *websocket.Conn) {
+	log.Println("Disconnecting client due to invalid requests.")
+	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
+	websocket.Message.Send(ws, toSend)
+	ws.Close()
+	if user != nil {
+		masc.UpdateBalance(user.name, -user.bet)
+		log.Println("User ", user.name, " loses his bet of ", user.bet)
 	}
 }

@@ -18,19 +18,31 @@ func TestNewAddress(t *testing.T) {
 	// test sending coins
 	txhash, err := SendCoins(address, 100000)
 	checkError(t, err)
-	fmt.Println("New transaction txhash: ", txhash)
+	if err == nil {
+		fmt.Println("New transaction txhash: ", txhash)
+	}
 
 	//test receiving coins
+	fmt.Println("Receive coins: ", txhash)
+
 	unconfirmed := make(chan *RecvTransaction)
 	confirmed := make(chan *RecvTransaction)
 	http.HandleFunc(fmt.Sprintf("/receive/%s/", callback_secret),
 		ReceiveCallback(unconfirmed, confirmed))
-	fmt.Println("kill process, because its listening")
-	http.ListenAndServe(":8080", nil)
+	go http.ListenAndServe(":8080", nil)
+	for {
+		select {
+		case o := <-unconfirmed:
+			fmt.Println("unconfirmed", o.txhash, o.address, o.amount)
+
+		case o := <-confirmed:
+			fmt.Println("confirmed", o.txhash, o.address, o.amount)
+		}
+	}
 }
 
 func checkError(t *testing.T, err error) {
 	if err != nil {
-		t.Errorf(err.Error())
+		fmt.Println(err.Error())
 	}
 }
