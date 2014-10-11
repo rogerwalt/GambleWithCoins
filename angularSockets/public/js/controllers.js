@@ -13,6 +13,8 @@ function AppCtrl($scope, socket) {
         percentage: 0
       }
 
+  $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
+
   $scope.$watch('roundProgressData', function (newValue, oldValue) {
     newValue.percentage = newValue.label / 100;
   }, true);
@@ -113,7 +115,14 @@ function AppCtrl($scope, socket) {
       console.log($scope.roundProgressData)
     }
   }
-  
+
+
+  $scope.$watchCollection('signals', function() {
+    console.log($('div.signaloverview').scrolltop);
+    $(".signaloverview").animate({ scrollTop: $('.signaloverview').height()}, 1000);
+  });
+
+
   /*$scope.changeName = function () {
     socket.emit('change:name', {
       name: $scope.newName

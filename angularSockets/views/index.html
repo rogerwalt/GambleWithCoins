@@ -37,7 +37,6 @@
   <script src="/js/controllers.js"></script>
   <script src="/js/filters.js"></script>
   <script src="/js/directives.js"></script>
-  <script src="/js/scrollglue.js"></script>
 
 
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -149,9 +148,9 @@
   		</div>
   		  		 	<hr>
 
-        <div scroll-glue="glued" class="container signaloverview">
+        <div scroll:glue="glued" class="container signaloverview">
   		 	<div ng-repeat="signal in signals" class="row message {{ signal.player == 'you' ? 'text-left' : 'text-right'}}">
-  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
+  		 	<div class="speechbubble"> <i class="fa {{signalIcons[signal.signal - 1] }} fa-3x"></i></div>
         </div>
 
   		</div>
