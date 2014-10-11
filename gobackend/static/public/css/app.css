@@ -4,6 +4,7 @@ html {
 }
 
 body {
+  oveflow: hidden;
   text-transform: uppercase;
   background-color: #eee;
   height: 100%;
@@ -284,4 +285,19 @@ footer p {
 
 .chat-menu i:hover {
   color: #1e2630;
+}
+
+.popover.fade.in {
+  opacity: 0.95;
+}
+
+.popover-title {
+  background-color: #9a3941;
+  color: white;
+  font-weight: bold;
+}
+
+.popover-content .form-control {
+  padding: 10px;
+  z-index: 1000;
 }

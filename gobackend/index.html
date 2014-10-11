@@ -27,16 +27,14 @@
 
 	<!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/tab.min.js"></script>
-
 
   <script src="static/public/js/app.js"></script>
   <script src="static/public/js/services.js"></script>
   <script src="static/public/js/controllers.js"></script>
   <script src="static/public/js/filters.js"></script>
   <script src="static/public/js/directives.js"></script>
-
+  <script src="static/public/js/tooltip.min.js"></script>
 
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -46,11 +44,12 @@
   </head>
 
   <body ng-controller="AppCtrl">
+
  	<div class="upperpart">
   	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
   		<div class="container">
   			<div class="navbar-header">
-  				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+  				<button type="button" class="navbar-toggle collapsed bottom" data-toggle="collapse" data-target=".navbar-collapse">
   					<span class="sr-only">Toggle navigation</span>
   					<span class="icon-bar"></span>
   					<span class="icon-bar"></span>
@@ -62,8 +61,13 @@
   			</div>
   			<div class="navbar-collapse collapse">
   				<form class="navbar-form navbar-right" role="form">
-            <button ng-show="!authenticated" class="btn bnt-mainmenu">Login</button>
-            <button ng-show="!authenticated" class="btn bnt-mainmenu">Register</button>
+
+<button id="login" class="btn bnt-mainmenu" data-original-title="Login" data-container="body" data-toggle="popover" data-placement="bottom" data-content="{{ loginform }}">
+Login
+</button>
+<button id="subscribe" class="btn bnt-mainmenu" data-original-title="Register" data-container="body" data-toggle="popover" data-placement="bottom" data-content="{{ subscribeform }}">
+Register
+</button>
   					<button class="btn bnt-mainmenu">Settings</button>
   					<button class="btn bnt-mainmenu">Manage balance</button>
   				</form>
@@ -97,7 +101,16 @@
   			</div>
 
   			<div class="col-md-4 col-xs-4">
- 				  <button class="round-button" ng-show="!join" ng-click="joinGame()">JOIN</button>
+
+           <div class="#login" ng-show="!authenticated">
+            <form class="form-signin" role="form">
+            <input ng-model="loginForm.name" type="name" class="form-control" placeholder="Name" required autofocus></input>
+            <input ng-model="loginForm.pass" ng-click="login" type="password" class="form-control" placeholder="Password" required></input>
+            <button ng-click="login(loginForm.name, loginForm.pass)" class="btn bnt-mainmenu btn-block">Sign in</button>
+            </form> 
+          </div>
+
+ 				  <button class="round-button" ng-show="!join && authenticated" ng-click="joinGame()">JOIN</button>
           <div class="awaiting" ng-show="!matched && join == true">
                     <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
           <p>Selecting an opponent...</p>
@@ -140,6 +153,7 @@
   	</div>
 
   	<div class="jumbotron messagefield">
+
                 <!--  <button class="btn" ng-click="matched = true">Match!</button> -->
                 <!-- <button class="btn" ng-click="countDown(10)">Countdoun</button> -->
 
