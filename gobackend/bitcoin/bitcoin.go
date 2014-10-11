@@ -29,9 +29,9 @@ func Setup(confname string) error {
 }
 
 type RecvTransaction struct {
-	txhash  string
-	address string
-	amount  int
+	Txhash  string
+	Address string
+	Amount  int
 }
 
 // function takes two channels over which it sends the transactions

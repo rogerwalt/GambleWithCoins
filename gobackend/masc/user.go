@@ -128,7 +128,7 @@ func GetNameFromDepositAddress(address string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return name
+	return name, nil
 }
 
 // TODO: store transaction id
@@ -136,11 +136,11 @@ func InsertIncomingTransactionsInDb(confirmed chan *bitcoin.RecvTransaction) {
 	for {
 		select {
 		case tx := <-confirmed:
-			name, err := GetNameFromDepositAddress(tx.address)
+			name, err := GetNameFromDepositAddress(tx.Address)
 			if err != nil {
 				continue
 			}
-			UpdateBalance(name, amount)
+			UpdateBalance(name, tx.Amount)
 		}
 	}
 }
