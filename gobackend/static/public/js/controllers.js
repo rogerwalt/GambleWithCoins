@@ -1,8 +1,48 @@
 'use strict';
 
+var WebSocketHandler = {
+  isConnected: false,
+  webSocket: null,
+  connect: function() {
+    var ws = new WebSocket("ws://localhost:8080/play/");
+    WebSocketHandler.webSocket = ws;
+    ws.onopen = function() {
+      console.log("WebSocket opened");
+      WebSocketHandler.isConnected = true;
+      ws.onclose = function() {
+        console.log("WebSocket closed");
+        WebSocketHandler.ws = null;
+        WebSocketHandler.isConnected = false;
+      }
+    }
+  },
+  send: function(dataToSend, receiveCallback) {
+    // check if connected
+    if (WebSocketHandler.isConnected) {
+      // send stuff
+      WebSocketHandler.webSocket.send(JSON.stringify(dataToSend));
+      // make sure the receiveCallback is a function
+      //if (typeof callback === "function") {
+        // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
+        WebSocketHandler.webSocket.onmessage = function(message) {
+          receiveCallback(JSON.parse(message.data));
+        };
+      //} else {
+        //console.log("Error: Function is required for callback.");
+      //}
+    } else {
+      console.log("Error: Not yet connected.");
+    }
+  }
+};
+
 /* Controllers */
 
 function AppCtrl($scope, $q, $rootScope) {
+
+//$scope.WebSocketHandler.send(JSON.)
+
+
 
 // Socket listeners
 // ================
