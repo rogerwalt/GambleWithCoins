@@ -12,14 +12,15 @@ func TestGame(t *testing.T) {
 	conn, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
-	msg := "join"
-	err = websocket.Message.Send(conn, msg)
+	// send join command
+	b := []byte(`{"command": "join"}`)
+	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
 	conn2, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
-	msg = "join"
+	msg := "join"
 	err = websocket.Message.Send(conn2, msg)
 	checkError(err)
 

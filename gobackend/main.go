@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"encoding/json"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -25,6 +26,15 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 		var msg string
 		err := websocket.Message.Receive(ws, &msg)
 		checkError(err)
+
+		// interpret message as json data
+		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
+		var f interface{}
+		err = json.Unmarshal([]byte(msg), &f)
+		checkError(err)
+
+		fmt.Printf("json received: %v", f)
+
 		msg = strings.Trim(msg, "\"")
 		if msg == "join" {
 			fmt.Println("Client wants to join")
@@ -69,7 +79,8 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 	err = websocket.Message.Receive(conn2, &action2)
 	checkError(err)
 
-	fmt.Println("Received actions")
+	fmt.Println("Received actions:")
+	fmt.Printf("%v", action1)
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
 	err = websocket.Message.Send(conn1, strconv.Itoa(p1))
 	checkError(err)
