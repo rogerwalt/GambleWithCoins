@@ -1,17 +1,25 @@
 # JSON API
 
-## The game
-
-### Players -> Server
+### login
 player has to be logged in before he can join a game.
+
+
 `{"command" : "register", "name" : ?, "password" : ?}`
 `{"command" : "login", "name" : ?, "password" : ?}`
+
 returns either
-`{"command" : "register", "success"}`
-`{"command" : "login", "success"}`
+
+`{"command" : "register", "result" : "success"}`
+
+`{"command" : "login", "result" : "success"}`
+
 or `{"error" : errormessage}`
 
-player sends`{"command" : "join"}` if he's ready to start a game
+### general
+`{"command" : "balance", "balance" : ?}` is sent from the server whenever a balance update occurs
+
+### setup game
+player sends`{"command" : "join"}` if he's ready to start a game,
 server replies `{"command" : "matched"}` as soon as the game is ready to begin
 
 #### When round is running
@@ -19,15 +27,5 @@ player sends `{"command" : "action", "action" : "cooperate"}` or `{"command" : "
 Smileys for other player with `{"command" : "signal", "signal" : ?}`
 
 #### After every round server replies
-`{ "result": "cooperate" }` or `{ "result": "defect" }`.
+`{ "command": "outcome", ... }`
 
-### Server -> Players
-
-#### Anytime
-Smileys from other player.
-
-#### When round finished
-Result of the round.
-
-#### If no round is running
-Start of next round.
