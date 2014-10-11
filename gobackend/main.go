@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -43,6 +45,11 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	for i := 0; i < 3; i++ {
 		if m["command"].(string) == "join" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
+				b := []byte(`{"command": "register", "result" : "success"}`)
+				err = websocket.Message.Send(ws, b)
+				if err != nil {
+					return nil, err
+				}
 				return &User{m["name"].(string), ws}, nil
 			} else {
 				return nil, errors.New("Wrong password")
@@ -51,6 +58,12 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 			err := masc.Register(m["name"].(string), m["password"].(string))
 			if err != nil {
 				return nil, err
+			} else {
+				b := []byte(`{"command": "register", "result" : "success"}`)
+				err = websocket.Message.Send(ws, b)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -201,7 +214,12 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", "./masc.db")
+	serverClose := make(chan int)
+	start("./masc.db", serverClose)
+}
+
+func start(dbName string, serverClose chan int) {
+	db, err := sql.Open("sqlite3", dbName)
 	checkError(err)
 	masc.SetupDb(db)
 	defer db.Close()
@@ -217,8 +235,24 @@ func main() {
 	})
 
 	http.Handle("/play/", websocket.Handler(makeGame(ready, close)))
-	err = http.ListenAndServe(":8080", nil)
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        nil,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	listener, err := net.Listen("tcp", ":8080")
 	checkError(err)
+	go s.Serve(listener)
+
+	select {
+
+	case <-serverClose:
+		listener.Close()
+	}
+	return
 }
 
 func checkError(err error) {

@@ -1,12 +1,64 @@
 package main
 
 import (
-	"testing"
 	"encoding/json"
+	"os"
+	"testing"
+	"time"
+
 	"code.google.com/p/go.net/websocket"
 )
 
+// TODO: shutting down the server gracefully does not yet work
+func startServer() chan int {
+	time.Sleep(100 * time.Millisecond)
+	// use fresh db
+	os.Remove("./test.db")
+	serverClose := make(chan int)
+	go start("./test.db", serverClose)
+
+	time.Sleep(100 * time.Millisecond)
+	return serverClose
+}
+
 func TestGame(t *testing.T) {
+	serverClose := startServer()
+
+	login(t)
+	game(t)
+
+	serverClose <- 1
+}
+
+func login(t *testing.T) {
+	service := "ws://localhost:8080/play/"
+
+	// open connection as player 1
+	conn, err := websocket.Dial(service, "", "http://localhost")
+	checkError(err)
+
+	// send "join" command as player 1
+	b := []byte(`{"command": "register", "name" : "foo", "password" : "bar"}`)
+	err = websocket.Message.Send(conn, b)
+	checkError(err)
+
+	var msg string
+	err = websocket.Message.Receive(conn, &msg)
+	checkError(err)
+
+	var f map[string]interface{}
+	err = json.Unmarshal([]byte(msg), &f)
+	checkError(err)
+	if f["command"] != "login" {
+		t.Error("Expected login, got ", msg)
+	}
+	if f["result"] != "success" {
+		t.Error("Expected success, got ", msg)
+	}
+
+}
+
+func game(t *testing.T) {
 	service := "ws://localhost:8080/play/"
 
 	// open connection as player 1
