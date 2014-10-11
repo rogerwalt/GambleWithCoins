@@ -222,10 +222,10 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	serverClose := make(chan int)
-	start("./masc.db", serverClose)
+	start("./masc.db", 8080, serverClose)
 }
 
-func start(dbName string, serverClose chan int) {
+func start(dbName string, port int, serverClose chan int) {
 	log.Println("Starting server")
 
 	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
@@ -247,14 +247,14 @@ func start(dbName string, serverClose chan int) {
 
 	http.Handle("/play/", websocket.Handler(makeGame(ready, close)))
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           fmt.Sprintf(":%d", port),
 		Handler:        nil,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	checkError(err)
 	go s.Serve(listener)
 

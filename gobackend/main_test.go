@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"encoding/json"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -18,7 +18,7 @@ func startServer() chan int {
 	// use fresh db
 	os.Remove("./test.db")
 	serverClose := make(chan int)
-	go start("./test.db", serverClose)
+	go start("./test.db", 8080, serverClose)
 
 	time.Sleep(100 * time.Millisecond)
 	return serverClose
@@ -38,22 +38,22 @@ func TestGame(t *testing.T) {
 func testDatabase(t *testing.T) {
 	log.Println("Test: ----- testingDatabase() procedure -----")
 	balance, err := masc.GetBalance("foo")
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 	log.Println("Test: Balance of user foo:", balance)
 
 	log.Println("Test: Depositing 100 to user foo")
 	err = masc.UpdateBalance("foo", 100)
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 
 	balance, err = masc.GetBalance("foo")
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
-	if (balance == 100) {
+	if balance == 100 {
 		log.Println("Test: Balance of user foo:", balance)
 	} else {
 		log.Println("Test: ERROR: Expected balance of 100")
@@ -61,15 +61,15 @@ func testDatabase(t *testing.T) {
 
 	log.Println("Test: Depositing -50 to user foo")
 	err = masc.UpdateBalance("foo", -50)
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 
 	balance, err = masc.GetBalance("foo")
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
-	if (balance == 50) {
+	if balance == 50 {
 		log.Println("Test: Balance of user foo:", balance)
 	} else {
 		log.Println("Test: ERROR: Expected balance of 50")
@@ -77,11 +77,11 @@ func testDatabase(t *testing.T) {
 
 	log.Println("Test: Registering two users with two different names")
 	masc.Register("foo1", "bar1")
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 	masc.Register("foo2", "bar2")
-	if (err != nil) {
+	if err != nil {
 		log.Println("Test: ERROR: ", err.Error())
 	}
 
@@ -151,7 +151,6 @@ func game(t *testing.T) {
 		log.Println("Test: ERROR: Expected success, got ", msg)
 	}
 	log.Println("Test: Player 1 logged in")
-
 
 	// send "join" command as player 1
 	log.Println("Test: Joining as player 1")
