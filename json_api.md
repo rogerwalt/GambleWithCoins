@@ -2,11 +2,17 @@
 
 ### login
 player has to be logged in before he can join a game.
+
+
 `{"command" : "register", "name" : ?, "password" : ?}`
 `{"command" : "login", "name" : ?, "password" : ?}`
+
 returns either
+
 `{"command" : "register", "result" : "success"}`
+
 `{"command" : "login", "result" : "success"}`
+
 or `{"error" : errormessage}`
 
 ### general
