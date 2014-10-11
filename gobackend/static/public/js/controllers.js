@@ -22,7 +22,11 @@ function AppCtrl($scope) {
     console.log('Error Logged: ' + error); //log errors
   };
   connection.onmessage = function (e) {
-    console.log('Received From Server: ' + e.data); //log the received message
+    console.log(JSON.parse(e.data))
+    var response = JSON.parse(e.data)
+    if (typeof response.result.errorCode != "undefined") {
+      console.log('Error: ' + response.result.errorMsg)
+    }
   };
 
   //$scope.customers = WebSocketFactory.getCustomers();
