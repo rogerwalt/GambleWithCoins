@@ -30,6 +30,7 @@ func TestUser(t *testing.T) {
 	Register("bla", "bar")
 
 	bitcoin.Setup("../bitcoin/blockchain-conf.test.json")
+	// test deposit address
 	addr1, err1 := getDepositAddress("bla")
 	if err1 != nil {
 		fmt.Println(err1.Error())
@@ -41,6 +42,19 @@ func TestUser(t *testing.T) {
 	if addr1 != addr2 {
 		t.Error("Expected deposit addresses to be the same")
 	}
+
+	// test withdraw (just from db perspective)
+	UpdateBalance("bla", 100)
+	err := Withdraw("bla", 101, "addr")
+	if err == nil {
+		t.Error("Expected returning insufficient funds")
+	}
+
+	err = Withdraw("bla", 100, "addr")
+	if err == nil {
+		t.Error("Shouldn't have funds here")
+	}
+
 }
 
 func checkError(err error) {

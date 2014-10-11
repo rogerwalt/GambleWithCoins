@@ -2,6 +2,7 @@ package masc
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,6 +32,7 @@ func Register(name, password string) error {
 	return err
 }
 
+//TODO: secure against race conditions
 func GetBalance(name string) (int, error) {
 	var balanceStr string
 	row := db.QueryRow(`SELECT balance FROM Users WHERE name = ?`, name)
@@ -59,6 +61,29 @@ func UpdateBalance(name string, balanceDifference int) error {
 	_, err = db.Exec(`UPDATE Users SET balance = ? WHERE name = ?`, balanceNew, name)
 
 	return err
+}
+
+//TODO: do proper transaction
+func Withdraw(name string, amount int, address string) error {
+	balance, err := GetBalance(name)
+	if err != nil {
+		return err
+	}
+	if balance < amount {
+		return errors.New("Insufficient funds.")
+	}
+
+	err = UpdateBalance(name, -amount)
+	if err != nil {
+		return err
+	}
+	//TODO: store txhash
+	_, err = bitcoin.SendCoins(address, amount)
+	if err != nil {
+		UpdateBalance(name, amount)
+		return err
+	}
+	return nil
 }
 
 func getDepositAddress(name string) (string, error) {
