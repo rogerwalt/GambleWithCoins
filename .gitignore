@@ -1,3 +1,5 @@
-bitcoin/blockchain-conf.json
-bitcoin/blockchain-conf.test.json
+gobackend/bitcoin/blockchain-conf.json
+gobackend/bitcoin/blockchain-conf.test.json
 *~
+gobackend/masc/test.db
+gobackend/main

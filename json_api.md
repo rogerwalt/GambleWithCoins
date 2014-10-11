@@ -3,11 +3,18 @@
 ## The game
 
 ### Players -> Server
+player has to be logged in before he can join a game.
+`{"command" : "register", "name" : ?, "password" : ?}`
+`{"command" : "login", "name" : ?, "password" : ?}`
+
+player sends`{"command" : "join"}` if he's ready to start a game
+server replies `{"command" : "matched"}` as soon as the game is ready to begin
 
 #### When round is running
-Smileys for other player.
+player sends `{"command" : "action", "action" : "cooperate"}` or `{"command" : "action", "action" : "defect"}`
+Smileys for other player with `{"command" : "signal", "signal" : ?}`
 
-#### Once every round
+#### After every round server replies
 `{ "result": "cooperate" }` or `{ "result": "defect" }`.
 
 ### Server -> Players
