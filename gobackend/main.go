@@ -94,30 +94,54 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			return
 		}
 
-		var msg string
-		err = websocket.Message.Receive(ws, &msg)
-		checkError(err)
+		for {
+			var msg string
+			err = websocket.Message.Receive(ws, &msg)
+			checkError(err)
 
-		// interpret message as json data
-		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
-		var f map[string]interface{}
-		err = json.Unmarshal([]byte(msg), &f)
+			// interpret message as json data
+			// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
+			var f map[string]interface{}
+			err = json.Unmarshal([]byte(msg), &f)
 
-		_, commandExists := f["command"]
+			_, commandExists := f["command"]
 
-		// remove client if sends invalid data
-		if err != nil || !commandExists {
-			disconnectClient(user, ws)
-			return
+			// remove client if sends invalid data
+			if err != nil || !commandExists {
+				disconnectClient(user, ws)
+				return
+			}
+
+			// check what the command is; here only join is allowed
+			switch f["command"] {
+			case "join":
+				fmt.Println("Client wants to join")
+				ready <- user
+			case "getBalance":
+				balance, _ := masc.GetBalance(user.name)
+				b := []byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance))
+				err = websocket.Message.Send(user.conn, b)
+			case "getDepositAddress":
+				address, _ := masc.GetDepositAddress(user.name)
+				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address))
+				err = websocket.Message.Send(user.conn, b)
+			case "withdraw":
+				address := f["address"].(string)
+				amount := f["amount"].(int)
+				err := masc.Withdraw(user.name, amount, address)
+				var b []byte
+				if err != nil {
+					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
+												{"error": "%s"}}`, err.Error()))
+				} else {
+					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
+				}
+				err = websocket.Message.Send(user.conn, b)
+			}
+			<-close
+			ws.Close()
 		}
-
-		// check what the command is; here only join is allowed
-		if f["command"] == "join" {
-			fmt.Println("Client wants to join")
-			ready <- user
-		}
-		<-close
-		ws.Close()
 	}
 }
 
