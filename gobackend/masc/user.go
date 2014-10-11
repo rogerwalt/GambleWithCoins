@@ -29,24 +29,33 @@ func Register(name, password string) error {
 	return err
 }
 
-func UpdateBalance(name string, balanceDifference int) error {
-	var balanceOldStr string
+func GetBalance(name string) (int, error) {
+	var balanceStr string
 	row := db.QueryRow(`SELECT balance FROM Users WHERE name = ?`, name)
-	err := row.Scan(&balanceOldStr)
+	err := row.Scan(&balanceStr)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	// convert balance from string to int
-	balanceOld, err := strconv.Atoi(balanceOldStr)
+	balance, err := strconv.Atoi(balanceStr)
     if err != nil {
         // handle error
         fmt.Println(err)
     }
 
-	balanceNew := balanceOld + balanceDifference
+    return balance, err
+}
 
+func UpdateBalance(name string, balanceDifference int) error {
+	balanceOld, err := GetBalance(name)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	balanceNew := balanceOld + balanceDifference
 	_, err = db.Exec(`UPDATE Users SET balance = ? WHERE name = ?`, balanceNew, name)
+
 	return err
 }
 
