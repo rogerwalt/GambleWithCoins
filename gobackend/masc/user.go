@@ -1,8 +1,18 @@
 package masc
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
 
 //TODO: use transactions
+
+var db *sql.DB
+
+// call before using any function in this file
+func setup(adb *sql.DB) {
+	db = adb
+}
 
 func register(name, password string) {
 	result, err := db.Exec(`CREATE TABLE Users(

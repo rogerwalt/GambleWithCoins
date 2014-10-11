@@ -11,7 +11,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"./masc"
+	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
+
 	"code.google.com/p/go.net/websocket"
 )
 
@@ -102,7 +103,6 @@ func main() {
 
 	http.Handle("/play/", websocket.Handler(makeGame(ready, close)))
 	err = http.ListenAndServe(":8080", nil)
-	//err = http.ListenAndServe(":12345", nil)
 	checkError(err)
 }
 
