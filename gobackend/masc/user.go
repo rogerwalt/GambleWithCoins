@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+var db *sql.DB
+
 //TODO: use transactions
 
 var db *sql.DB
