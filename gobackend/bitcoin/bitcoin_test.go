@@ -29,7 +29,7 @@ func TestNewAddress(t *testing.T) {
 	confirmed := make(chan *RecvTransaction)
 	http.HandleFunc(fmt.Sprintf("/receive/%s/", callback_secret),
 		ReceiveCallback(unconfirmed, confirmed))
-	http.ListenAndServe(":8080", nil)
+	go http.ListenAndServe(":8080", nil)
 	for {
 		select {
 		case o := <-unconfirmed:

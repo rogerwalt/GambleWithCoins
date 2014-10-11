@@ -47,7 +47,7 @@ func ReceiveCallback(unconfirmed, confirmed chan *RecvTransaction) http.HandlerF
 		confirmations, _ := strconv.Atoi(params["confirmations"][0])
 		value, _ := strconv.Atoi(params["value"][0])
 		tx := &RecvTransaction{params["transaction_hash"][0],
-			params["input_address"][0],
+			params["destination_address"][0],
 			value}
 
 		if confirmations == 0 {
@@ -55,7 +55,7 @@ func ReceiveCallback(unconfirmed, confirmed chan *RecvTransaction) http.HandlerF
 		} else if confirmations == 2 {
 			confirmed <- tx
 			fmt.Fprintf(w, "*ok*")
-		} else if confirmations <= 4 {
+		} else if confirmations > 2 && confirmations <= 4 {
 			log.Println("Callback from received despite having sent ok")
 
 			confirmed <- tx
