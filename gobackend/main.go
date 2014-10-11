@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -17,11 +18,59 @@ import (
 	"code.google.com/p/go.net/websocket"
 )
 
-func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn) {
+type User struct {
+	name string
+	conn *websocket.Conn
+}
+
+func sendError(ws *websocket.Conn, err error) {
+	toSend, _ := json.Marshal(map[string]string{"error": err.Error()})
+	websocket.Message.Send(ws, toSend)
+}
+
+// returns a User if a user has successfully authenticated himself,
+// otherwise returns an error
+func authenticate(ws *websocket.Conn) (*User, error) {
+	var msg string
+	err := websocket.Message.Receive(ws, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+	json.Unmarshal([]byte(msg), &m)
+
+	for i := 0; i < 3; i++ {
+		if m["command"].(string) == "join" {
+			if masc.Login(m["name"].(string), m["password"].(string)) {
+				return &User{m["name"].(string), ws}, nil
+			} else {
+				return nil, errors.New("Wrong password")
+			}
+		} else if m["command"].(string) == "register" {
+			err := masc.Register(m["name"].(string), m["password"].(string))
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return nil, errors.New("Too many unsuccessful logins")
+
+}
+
+func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 	return func(ws *websocket.Conn) {
 		log.Println("Client connected")
+
+		user, err := authenticate(ws)
+		if err != nil {
+			sendError(ws, err)
+			ws.Close()
+			return
+		}
+
 		var msg string
-		err := websocket.Message.Receive(ws, &msg)
+		err = websocket.Message.Receive(ws, &msg)
 		checkError(err)
 
 		// interpret message as json data
@@ -41,49 +90,49 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 		// check what the command is; here only join is allowed
 		if f["command"] == "join" {
 			fmt.Println("Client wants to join")
-			ready <- ws
+			ready <- user
 		}
 		<-close
 		ws.Close()
 	}
 }
 
-func Hub(ready chan *websocket.Conn) {
-	waitingClients := make([]*websocket.Conn, 0, 2)
+func Hub(ready chan *User) {
+	waitingUsers := make([]*User, 0, 2)
 	for {
 		select {
-		case c := <-ready:
-			if len(waitingClients) > 0 {
+		case u := <-ready:
+			if len(waitingUsers) > 0 {
 				log.Println("Matching clients")
 
-				cWaiting := waitingClients[len(waitingClients)-1]
-				waitingClients = waitingClients[:len(waitingClients)-1]
+				uWaiting := waitingUsers[len(waitingUsers)-1]
+				waitingUsers = waitingUsers[:len(waitingUsers)-1]
 
-				err := websocket.Message.Send(cWaiting, []byte(`{"command": "matched"}`))
+				err := websocket.Message.Send(uWaiting.conn, []byte(`{"command": "matched"}`))
 				if err != nil {
-					cWaiting.Close()
-					waitingClients = append(waitingClients, c)
+					uWaiting.conn.Close()
+					waitingUsers = append(waitingUsers, u)
 				}
 
-				err = websocket.Message.Send(c, []byte(`{"command": "matched"}`))
+				err = websocket.Message.Send(u.conn, []byte(`{"command": "matched"}`))
 				if err != nil {
-					c.Close()
-					waitingClients = append(waitingClients, cWaiting)
+					u.conn.Close()
+					waitingUsers = append(waitingUsers, uWaiting)
 				}
 
-				go handleGame(cWaiting, c)
+				go handleGame(uWaiting, u)
 
 			} else {
 				log.Println("Appending client")
-				waitingClients = append(waitingClients, c)
+				waitingUsers = append(waitingUsers, u)
 			}
 		}
 	}
 }
 
-func handleGame(conn1, conn2 *websocket.Conn) {
+func handleGame(user1, user2 *User) {
 	var action1, action2 string
-	err := websocket.Message.Receive(conn1, &action1)
+	err := websocket.Message.Receive(user1.conn, &action1)
 	checkError(err)
 
 	// interpret message as json data
@@ -96,20 +145,20 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
 		log.Println("Remove client due to invalid requests.")
-		conn1.Close()
+		user1.conn.Close()
 		return
 	}
 
 	// try to convert action1 to string
 	if str, ok := f["command"].(string); ok {
-	    action1 = str
+		action1 = str
 	} else {
-	    log.Println("Remove client due to invalid requests.")
-		conn1.Close()
+		log.Println("Remove client due to invalid requests.")
+		user1.conn.Close()
 		return
 	}
 
-	err = websocket.Message.Receive(conn2, &action2)
+	err = websocket.Message.Receive(user2.conn, &action2)
 	checkError(err)
 
 	// interpret message as json data
@@ -121,25 +170,25 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
 		log.Println("Remove client due to invalid requests.")
-		conn2.Close()
+		user2.conn.Close()
 		return
 	}
 
 	// try to convert action2 to string
 	if str, ok := f["command"].(string); ok {
-	    action2 = str
+		action2 = str
 	} else {
-	    log.Println("Remove client due to invalid requests.")
-		conn1.Close()
+		log.Println("Remove client due to invalid requests.")
+		user1.conn.Close()
 		return
 	}
 
 	log.Println("Received actions:")
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
-	err = websocket.Message.Send(conn1, strconv.Itoa(p1))
+	err = websocket.Message.Send(user1.conn, strconv.Itoa(p1))
 	checkError(err)
 
-	err = websocket.Message.Send(conn2, strconv.Itoa(p2))
+	err = websocket.Message.Send(user2.conn, strconv.Itoa(p2))
 	checkError(err)
 	log.Println("Sent payoffs")
 }
@@ -157,7 +206,7 @@ func main() {
 	masc.SetupDb(db)
 	defer db.Close()
 
-	ready := make(chan *websocket.Conn)
+	ready := make(chan *User)
 	close := make(chan bool)
 
 	go Hub(ready)

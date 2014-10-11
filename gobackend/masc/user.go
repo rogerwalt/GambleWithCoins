@@ -21,7 +21,7 @@ func SetupDb(adb *sql.DB) error {
 	return err
 }
 
-func register(name, password string) error {
+func Register(name, password string) error {
 	_, err := db.Exec(`INSERT INTO Users 
 							(name, password, balance) 
 							VALUES (?, ?, 0);`, name, password)
@@ -32,7 +32,7 @@ func getAddress() {
 
 }
 
-func login(name, password string) bool {
+func Login(name, password string) bool {
 	var expected string
 	row := db.QueryRow("SELECT password FROM Users WHERE name = ?", name)
 	err := row.Scan(&expected)
