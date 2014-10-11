@@ -33,9 +33,7 @@ func TestGame(t *testing.T) {
 	loginAndRegister(t)
 	testDatabase(t)
 	game(t)
-	/* gameB(t)*/
-	//gameC(t)
-	/*gameSlow(t)*/
+	//gameSlow(t)
 
 	serverClose <- 1
 }
@@ -131,6 +129,7 @@ func loginAndRegister(t *testing.T) {
 	conn2, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
+	//time.Sleep(100 * time.Second)
 	log.Println("Test: Login as player 1")
 	// send "join" command as player 1
 	b = []byte(`{"command": "login", "name" : "foo1", "password" : "bar1"}`)
@@ -282,51 +281,101 @@ func joinGame(name1, pass1 string, balance1 int,
 	return conn, conn2
 }
 
+func gameRound(conn1, conn2 *websocket.Conn) {
+	// receive start round as player 1
+	messageType, msg, err := conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive start round as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send "cooperate" command as player 1
+	b := []byte(`{"command": "action", "action" : "cooperate"}`)
+	err = conn1.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send "defect" command as player 2
+	b = []byte(`{"command": "action", "action": "defect"}`)
+	err = conn2.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+}
+
 func game(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
 	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
 
-	for i := 0; i < 2; i++ {
-		// receive start round as player 1
-		messageType, msg, err := conn1.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
-
-		// receive start round as player 2
-		messageType, msg, err = conn2.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
-
-		// send "cooperate" command as player 1
-		b := []byte(`{"command": "action", "action" : "cooperate"}`)
-		err = conn1.WriteMessage(messageType, b)
-		checkError(err)
-
-		// receive notification as player 2
-		messageType, msg, err = conn2.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
-
-		// send "defect" command as player 2
-		b = []byte(`{"command": "action", "action": "defect"}`)
-		err = conn2.WriteMessage(messageType, b)
-		checkError(err)
-
-		// receive notification as player 1
-		messageType, msg, err = conn1.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
-
-		// receive game notification as player 1
-		messageType, msg, err = conn1.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
-
-		// receive game notification as player 2
-		messageType, msg, err = conn2.ReadMessage()
-		checkError(err)
-		log.Println(string(msg))
+	for i := 0; i < 3; i++ {
+		gameRound(conn1, conn2)
 	}
+
+	// receive game notification as player 1
+	messageType, msg, err := conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 2
+	_, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send "join" command as player 1
+	log.Println("Test: Joining as player 1")
+	b := []byte(`{"command": "join"}`)
+	err = conn1.WriteMessage(messageType, b)
+	checkError(err)
+
+	// send "join" command as player 2
+	log.Println("Test: Joining as player 2")
+	b = []byte(`{"command": "join"}`)
+	err = conn2.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive "matched" message from server as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "matched" message from server as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	for i := 0; i < 6; i++ {
+		gameRound(conn1, conn2)
+	}
+
+	// receive game notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 2
+	_, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
 
 	log.Println("Test: ----- game() ended -----")
 }
@@ -355,6 +404,7 @@ func gameSlow(t *testing.T) {
 	checkError(err)
 	log.Println(string(msg))
 
+	time.Sleep(20 * time.Second)
 	// send "defect" command as player 2
 	b = []byte(`{"command": "action", "action": "defect"}`)
 	err = conn2.WriteMessage(messageType, b)

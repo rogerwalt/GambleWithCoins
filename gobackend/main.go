@@ -21,8 +21,47 @@ import (
 )
 
 type User struct {
-	name string
-	conn *websocket.Conn
+	name          string
+	conn          *websocket.Conn
+	recvChan      chan string
+	recvErrorChan chan error
+	sendChan      chan string
+	sendErrorChan chan error
+}
+
+func receiver(conn *websocket.Conn) (chan string, chan error) {
+	ch, errCh := make(chan string), make(chan error)
+	go func() {
+		for {
+			_, s, err := conn.ReadMessage()
+			//pongWait := *time.Second
+			//conn.SetReadDeadline(time.Now().Add(pongWait))
+			if err != nil {
+				log.Println(err.Error())
+				errCh <- err
+				close(ch)
+				return
+			}
+			ch <- string(s)
+		}
+	}()
+	return ch, errCh
+}
+
+func sender(conn *websocket.Conn) (chan string, chan error) {
+	ch, errCh := make(chan string), make(chan error)
+	go func() {
+		for {
+			s := <-ch
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(s)); err != nil {
+				log.Println(err.Error())
+				errCh <- err
+				close(ch)
+				return
+			}
+		}
+	}()
+	return ch, errCh
 }
 
 var upgrader = websocket.Upgrader{
@@ -39,6 +78,12 @@ type ApiError struct {
 func sendError(conn *websocket.Conn, err ApiError) {
 	log.Printf("API Error: Code %i, \"%s\", Command \"%s\"", err.code, err.message, err.command)
 	conn.WriteMessage(websocket.TextMessage, []byte(`{"command": "`+err.command+`", "result": { "errorCode": `+strconv.Itoa(err.code)+`, "errorMsg": "`+err.message+`"}}`))
+}
+
+func newUser(name string, conn *websocket.Conn) *User {
+	recvChan, recvErrorChan := receiver(conn)
+	sendChan, sendErrorChan := sender(conn)
+	return &User{name, conn, recvChan, recvErrorChan, sendChan, sendErrorChan}
 }
 
 // returns a User if a user has successfully authenticated himself,
@@ -75,7 +120,7 @@ func authenticate(conn *websocket.Conn) (*User, *ApiError) {
 					return nil, &e
 				}
 				log.Println("Authenticate:", m["name"], "logged in")
-				return &User{m["name"].(string), conn}, nil
+				return newUser(m["name"].(string), conn), nil
 			} else {
 				e.message = "Wrong username or password."
 				e.code = 1
@@ -103,7 +148,7 @@ func authenticate(conn *websocket.Conn) (*User, *ApiError) {
 					return nil, &e
 				}
 				log.Println("Authenticate:", m["name"], "registered successfully")
-				return &User{m["name"].(string), conn}, nil
+				return newUser(m["name"].(string), conn), nil
 			}
 		}
 	}
@@ -121,7 +166,7 @@ func authenticate(conn *websocket.Conn) (*User, *ApiError) {
 	return nil, &e
 }
 
-func makeGame(ready chan *User, close chan bool) func(w http.ResponseWriter, r *http.Request) {
+func makeGame(ready chan *User, hubDone chan chan int, close chan bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Client connected")
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -139,14 +184,7 @@ func makeGame(ready chan *User, close chan bool) func(w http.ResponseWriter, r *
 
 		log.Println("makeGame:", user.name, "Successfully authenticated")
 		for {
-			messageType, msg, err := conn.ReadMessage()
-			if err != nil {
-				// if it is just a receive timeout just continue with the loop
-				if e, ok := err.(*net.OpError); ok && !e.Temporary() {
-					checkError(err)
-				}
-				continue
-			}
+			msg := <-user.recvChan
 
 			// interpret message as json data
 			// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
@@ -164,37 +202,39 @@ func makeGame(ready chan *User, close chan bool) func(w http.ResponseWriter, r *
 			// check what the command is;
 			switch f["command"] {
 			case "join":
-				fmt.Println("Client wants to join")
+				fmt.Println("Client to the hub")
 				ready <- user
+				done := make(chan int)
+				hubDone <- done
+				<-done
 			case "getBalance":
 				balance, _ := masc.GetBalance(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance))
-				err = user.conn.WriteMessage(messageType, b)
+				b := fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance)
+				user.sendChan <- b
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
-					address))
-				err = user.conn.WriteMessage(messageType, b)
+				b := fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address)
+				user.sendChan <- b
 			case "withdraw":
 				address := f["address"].(string)
 				amount := f["amount"].(int)
 				err := masc.Withdraw(user.name, amount, address)
-				var b []byte
+				var b string
 				if err != nil {
-					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : {"error": "%s"}}`, err.Error()))
+					b = fmt.Sprintf(`{"command" : "withdraw", "result" : {"error": "%s"}}`, err.Error())
 				} else {
-					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
+					b = `{"command" : "withdraw", "result" : "success"}`
 				}
-				err = user.conn.WriteMessage(messageType, b)
+				user.sendChan <- b
 			}
-			<-close
-			conn.Close()
 		}
+		conn.Close()
 		log.Println("makeGame: End")
 	}
 }
 
-func Hub(ready chan *User) {
+func Hub(ready chan *User, hubDone chan chan int) {
 	waitingUsers := make([]*User, 0, 2)
 	for {
 		select {
@@ -205,19 +245,21 @@ func Hub(ready chan *User) {
 				uWaiting := waitingUsers[len(waitingUsers)-1]
 				waitingUsers = waitingUsers[:len(waitingUsers)-1]
 
-				err := uWaiting.conn.WriteMessage(websocket.TextMessage, []byte(`{"command": "matched"}`))
-				if err != nil {
-					uWaiting.conn.Close()
+				select {
+				case uWaiting.sendChan <- `{"command": "matched"}`:
+				case <-uWaiting.sendErrorChan:
 					waitingUsers = append(waitingUsers, u)
 				}
 
-				err = u.conn.WriteMessage(websocket.TextMessage, []byte(`{"command": "matched"}`))
-				if err != nil {
-					u.conn.Close()
+				select {
+				case u.sendChan <- `{"command": "matched"}`:
+				case <-u.sendErrorChan:
 					waitingUsers = append(waitingUsers, uWaiting)
 				}
 
-				go handleGame(uWaiting, u)
+				done2 := <-hubDone
+				done1 := <-hubDone
+				go handleGame(uWaiting, u, done1, done2)
 
 			} else {
 				log.Println("Client joined")
@@ -225,37 +267,6 @@ func Hub(ready chan *User) {
 			}
 		}
 	}
-}
-
-func receiver(conn *websocket.Conn) (<-chan string, chan error) {
-	ch, errCh := make(chan string), make(chan error)
-	go func() {
-		for {
-			_, s, err := conn.ReadMessage()
-			if err != nil {
-				errCh <- err
-				close(ch)
-				return
-			}
-			ch <- string(s)
-		}
-	}()
-	return ch, errCh
-}
-
-func sender(conn *websocket.Conn) (chan string, chan error) {
-	ch, errCh := make(chan string), make(chan error)
-	go func() {
-		for {
-			s := <-ch
-			if err := conn.WriteMessage(websocket.TextMessage, []byte(s)); err != nil {
-				errCh <- err
-				close(ch)
-				return
-			}
-		}
-	}()
-	return ch, errCh
 }
 
 // takes on input channel the player a player that has chosen his action
@@ -286,13 +297,9 @@ func handleGameRound(user1, user2 *User, b, E int) {
 
 	timer := time.NewTimer(time.Second * 30)
 	chose, ready := choseNotifier()
-	recv1, _ := receiver(user1.conn)
-	sender1, _ := sender(user1.conn)
-	recv2, _ := receiver(user2.conn)
-	sender2, _ := sender(user2.conn)
 	// send startRound to players
-	sender1 <- `{"command" : "startRound"}`
-	sender2 <- `{"command" : "startRound"}`
+	user1.sendChan <- `{"command" : "startRound"}`
+	user2.sendChan <- `{"command" : "startRound"}`
 
 	log.Println("Waiting for players actions in round.")
 	action1, action2 := "", ""
@@ -321,11 +328,10 @@ func handleGameRound(user1, user2 *User, b, E int) {
 ActionLoop:
 	for {
 		select {
-		case msg := <-recv1:
-			log.Println("bla")
-			action1 = receiveAction(msg, sender2, chose, 1, action1)
-		case msg := <-recv2:
-			action2 = receiveAction(msg, sender1, chose, 2, action2)
+		case msg := <-user1.recvChan:
+			action1 = receiveAction(msg, user2.sendChan, chose, 1, action1)
+		case msg := <-user2.recvChan:
+			action2 = receiveAction(msg, user1.sendChan, chose, 2, action2)
 		case <-timer.C:
 			log.Println("Time is up")
 			break ActionLoop
@@ -352,21 +358,17 @@ ActionLoop:
 	log.Println("Received actions: ", action1, action2)
 	p1, p2 := masc.PrisonersDilemma(action1, action2, b, E)
 
-	err := user1.conn.WriteMessage(websocket.TextMessage,
-		[]byte(fmt.Sprintf(`{ "command": "endRound", 
+	user1.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
 						"outcome" : {"me" : %s, "other" : %s}, 
 						"balanceDifference" : {"me" : %d, 
 											   "other" : %d}}`,
-			action1, action2, p1, p2)))
-	checkError(err)
+		action1, action2, p1, p2)
 
-	err = user2.conn.WriteMessage(websocket.TextMessage,
-		[]byte(fmt.Sprintf(`{ "command": "endRound", 
+	user2.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
 						"outcome" : {"me" : %s, "other" : %s}, 
 						"balanceDifference" : {"me" : %d, 
 											   "other" : %d}}`,
-			action2, action1, p2, p1)))
-	checkError(err)
+		action2, action1, p2, p1)
 	log.Println("Sent payoffs", p1, p2)
 
 	log.Println("Update balances")
@@ -377,7 +379,7 @@ ActionLoop:
 }
 
 //TODO: handle more errors
-func handleGame(user1, user2 *User) {
+func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
@@ -392,10 +394,8 @@ RoundLoop:
 		log.Println("Players balance: ", balance1, balance2)
 
 		endGame := func() {
-			err := user1.conn.WriteMessage(websocket.TextMessage, []byte(`{"command": "endGame"}`))
-			checkError(err)
-			err = user2.conn.WriteMessage(websocket.TextMessage, []byte(`{"command": "endGame"}`))
-			checkError(err)
+			user1.sendChan <- `{"command": "endGame"}`
+			user2.sendChan <- `{"command": "endGame"}`
 		}
 		switch {
 		case balance1 < bet && balance2 < bet:
@@ -430,6 +430,9 @@ RoundLoop:
 		handleGameRound(user1, user2, bet, E)
 	}
 
+	done1 <- 1
+	done2 <- 1
+
 	return
 }
 
@@ -457,16 +460,17 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 	defer db.Close()
 
 	ready := make(chan *User)
+	hubDone := make(chan chan int)
 	close := make(chan bool)
 
-	go Hub(ready)
+	go Hub(ready, hubDone)
 
 	http.HandleFunc("/", staticHandler)
 	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 	})
 
-	http.HandleFunc("/play/", makeGame(ready, close))
+	http.HandleFunc("/play/", makeGame(ready, hubDone, close))
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
 		Handler:        nil,
