@@ -11,7 +11,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
+	"./masc"
 
 	"code.google.com/p/go.net/websocket"
 )
