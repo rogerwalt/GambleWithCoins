@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+
+	"github.com/rogerwalt/GambleWithCoins/gobackend/bitcoin"
 )
 
 //TODO: use transactions
@@ -24,8 +26,8 @@ func SetupDb(adb *sql.DB) error {
 
 func Register(name, password string) error {
 	_, err := db.Exec(`INSERT INTO Users 
-							(name, password, balance) 
-							VALUES (?, ?, 0);`, name, password)
+							(name, password, balance, depositAddress) 
+							VALUES (?, ?, 0, "NULL");`, name, password)
 	return err
 }
 
@@ -39,12 +41,12 @@ func GetBalance(name string) (int, error) {
 
 	// convert balance from string to int
 	balance, err := strconv.Atoi(balanceStr)
-    if err != nil {
-        // handle error
-        fmt.Println(err)
-    }
+	if err != nil {
+		// handle error
+		fmt.Println(err)
+	}
 
-    return balance, err
+	return balance, err
 }
 
 func UpdateBalance(name string, balanceDifference int) error {
@@ -59,8 +61,25 @@ func UpdateBalance(name string, balanceDifference int) error {
 	return err
 }
 
-func getAddress() {
+func getDepositAddress(name string) (string, error) {
+	var depositAddress string
+	row := db.QueryRow("SELECT depositAddress FROM Users WHERE name = ?", name)
+	err := row.Scan(&depositAddress)
+	if err != nil {
+		return "", err
+	}
 
+	if depositAddress == "NULL" {
+		depositAddress, err = bitcoin.NewAddress()
+		if err != nil {
+			return "", err
+		}
+		_, err = db.Exec(`UPDATE Users SET depositAddress = ? WHERE name = ?`, depositAddress, name)
+		if err != nil {
+			return "", err
+		}
+	}
+	return depositAddress, nil
 }
 
 func Login(name, password string) bool {
