@@ -29,9 +29,13 @@ func TestGame(t *testing.T) {
 	log.Println("Test: Starting server")
 	serverClose := startServer()
 
+	// do not change order: probabilistic/seed dependent!!
 	loginAndRegister(t)
 	testDatabase(t)
 	game(t)
+	gameB(t)
+	gameC(t)
+	gameSlow(t)
 
 	serverClose <- 1
 }
@@ -276,12 +280,6 @@ func joinGame(name1, pass1 string, balance1 int,
 	return conn, conn2
 }
 
-func TestGames(t *testing.T) {
-	// do not change order: probabilistic/seed dependent!!
-	game(t)
-
-}
-
 func game(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
 	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
@@ -313,6 +311,129 @@ func game(t *testing.T) {
 	checkError(err)
 
 	// receive notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	log.Println("Test: ----- game() ended -----")
+}
+
+func gameB(t *testing.T) {
+	//var conn1, conn2 *websocket.Conn
+	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
+	var msg string
+
+	// receive start round as player 1
+	err := websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive start round as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// send "cooperate" command as player 1
+	b := []byte(`{"command": "action", "action" : "cooperate"}`)
+	err = websocket.Message.Send(conn1, b)
+	checkError(err)
+
+	// receive notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// send "cooperate" command as player 2
+	b = []byte(`{"command": "action", "action": "cooperate"}`)
+	err = websocket.Message.Send(conn2, b)
+	checkError(err)
+
+	// receive notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	log.Println("Test: ----- game() ended -----")
+}
+
+func gameC(t *testing.T) {
+	//var conn1, conn2 *websocket.Conn
+	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
+	var msg string
+
+	// receive start round as player 1
+	err := websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive start round as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+}
+
+func gameSlow(t *testing.T) {
+	//var conn1, conn2 *websocket.Conn
+	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
+	var msg string
+
+	// receive start round as player 1
+	err := websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive start round as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// send "cooperate" command as player 1
+	b := []byte(`{"command": "action", "action" : "cooperate"}`)
+	err = websocket.Message.Send(conn1, b)
+	checkError(err)
+
+	// receive notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	time.Sleep(8 * time.Second)
+	// send "cooperate" command as player 2
+	b = []byte(`{"command": "action", "action": "cooperate"}`)
+	err = websocket.Message.Send(conn2, b)
+	checkError(err)
+
+	// receive notification as player 2
 	err = websocket.Message.Receive(conn1, &msg)
 	checkError(err)
 	log.Println(msg)
