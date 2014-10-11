@@ -1,0 +1,75 @@
+body {
+  background-color: #0b131e;
+  text-transform: uppercase;
+
+  background-image: 
+   -webkit-radial-gradient(40% 45%, circle, #98373c, transparent),
+   -webkit-radial-gradient(45% 55%, circle, #503549, transparent);
+   /*
+   -webkit-radial-gradient(10% 10%, circle, #E1C3B9, transparent); */
+
+   radial-gradient(80% 10%, circle, #BF7667, transparent),
+   radial-gradient(80% 50%, circle, #EFDDB7, transparent);
+  /*radial-gradient(10% 10%, circle, #E1C3B9, transparent); */
+}
+
+.jumbotron {
+  padding-top: 58px;
+  padding-bottom: 10px;
+  height: 180px;
+}
+
+.jumbotron h1 {
+  font-size: 18px;
+}
+
+.jumbotron p {
+  font-size: 25px;
+}
+
+.container.rounds {
+  background-color: #0b131e;
+  color: #fff;
+  padding: 0px;
+}
+
+.container.rounds h2 {
+  margin: 12px;
+  font-size: 16px;
+}
+
+.container, .jumbotron .container {
+  text-align: center;
+  max-width: 800px;
+}
+
+.container.galaxy {
+  padding-top: 20px;
+  padding-bottom: 30px;
+}
+.container.galaxy i {
+  color: white;
+}
+
+.messagefield {
+  margin-bottom: 0px;
+}
+
+footer hr {
+  border-color: #832228;
+}
+
+.bnt-mainmenu {
+  color: white;
+  background-color: #1e2630;
+  border-color: #1e2630;
+  margin: 0px 5px 0px 0px;
+}
+
+.bnt-mainmenu:hover {
+  color: #963b43;
+}
+
+.navbar-inverse {
+  background-color: #0b131e;
+}

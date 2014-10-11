@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html ng-app="angularjs-starter">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<link rel="icon" href="../../favicon.ico">
+
+	<title>Jumbotron Template for Bootstrap</title>
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/jumbotron.min.css">
+
+	<link rel="stylesheet" href="custom.css">
+	<link rel="stylesheet" href="loadingbar.css">
+
+
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+	<script type="text/javascript" src="angular-round-progress-directive.js"></script>
+
+	      <script>
+      var app = angular.module('angularjs-starter', ['angular.directives-round-progress']);
+
+      app.controller('MainCtrl', function($scope) {
+        $scope.roundProgressData = {
+          label: 11,
+          percentage: 0.11
+        }
+
+        // Here I synchronize the value of label and percentage in order to have a nice demo
+        $scope.$watch('roundProgressData', function (newValue, oldValue) {
+          newValue.percentage = newValue.label / 100;
+        }, true);
+      });
+      </script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <![endif]-->
+  </head>
+
+  <body ng-controller="MainCtrl">
+
+  	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+  		<div class="container">
+  			<div class="navbar-header">
+  				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+  					<span class="sr-only">Toggle navigation</span>
+  					<span class="icon-bar"></span>
+  					<span class="icon-bar"></span>
+  					<span class="icon-bar"></span>
+  				</button>
+  				<a class="navbar-brand" href="#">
+  				 	BG
+  				</a>
+  			</div>
+  			<div class="navbar-collapse collapse">
+  				<form class="navbar-form navbar-right" role="form">
+  				  	<button class="btn bnt-mainmenu">Settings</button>
+  					<button class="btn bnt-mainmenu">Manage balance</button>
+  				</form>
+  			</div><!--/.navbar-collapse -->
+  		</div>
+  	</div>
+
+  	<!-- Main jumbotron for a primary marketing message or call to action -->
+  	<div class="jumbotron">
+  		<div class="container balance">
+  			 	<h1>Your balance:</h1>
+  			 	<p>$109</p>
+  		</div>
+  		 <div class="container rounds">
+  		  		<h2>Round 1</h2>
+  		</div>
+  	</div>
+
+  	<div class="container galaxy">
+  		<!-- Example row of columns -->
+  		<div class="row">
+  			<div class="col-md-4">
+<i class="fa fa-check-circle fa-5x"></i>
+  			</div>
+  			<div class="col-md-4">
+
+    <div ang:round:progress data-round-progress-model="roundProgressData"
+                            data-round-progress-width="85"
+                            data-round-progress-height="85"
+                            data-round-progress-outer-circle-width="10"
+                            data-round-progress-outer-circle-radius="30"
+                            data-round-progress-label-font="15pt Arial"
+                            data-round-progress-outer-circle-background-color="rgba(255, 255, 255, 0.2)"
+                            data-round-progress-outer-circle-foreground-color="rgba(255, 255, 255, 0.9)"
+                            data-round-progress-inner-circle-color="#505769"
+                            data-round-progress-label-color="#fff"></div>
+
+    <input type="number" ng-model="roundProgressData.label"/>
+  			</div>
+  			<div class="col-md-4">
+
+  			<span class="fa-stack fa-lg fa-icon-large">
+   			<i class="fa fa-circle fa-stack-2x"></i>
+   			<i class="fa fa-times-circle fa-stack-1x"></i>
+</span>
+  			</div>
+  		</div>
+
+  	</div>
+
+  	  	<div class="jumbotron messagefield">
+  		<div class="container">
+ 			<p>Just message me ok </p>
+  		<footer>
+  		  		<hr>
+
+  			<p>&copy; Company 2014</p>
+  		</footer>
+  		</div>
+  	</div>
+  	 <!-- /container -->
+</body>
+</html>
