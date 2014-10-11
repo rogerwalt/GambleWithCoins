@@ -22,6 +22,7 @@ or `{"command" : "login", "result" {"error" : error_message}}`
 ### errorcodes
 * 1: Wrong username or password.
 * 2: Too many unsuccessful logins.
+* 50: Invalid requests.
 * 98: Could not receive any data from client. 
 * 99: Could not send back data to client (probably never gonna happen).
 * 999: Could not register new user.
