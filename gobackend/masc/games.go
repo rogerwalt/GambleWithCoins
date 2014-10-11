@@ -9,7 +9,7 @@ func PrisonersDilemma(action1, action2 string, b, E int) (int, int) {
 	case action1 == "defect" && action2 == "cooperate":
 		return b, -b
 	case action1 == "defect" && action2 == "defect":
-		return 0, 0
+		return -b, -b
 	default:
 		return 0, 0
 	}
