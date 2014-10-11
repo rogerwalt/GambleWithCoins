@@ -6,6 +6,10 @@
 player has to be logged in before he can join a game.
 `{"command" : "register", "name" : ?, "password" : ?}`
 `{"command" : "login", "name" : ?, "password" : ?}`
+returns either
+`{"command" : "register", "success"}`
+`{"command" : "login", "success"}`
+or `{"error" : errormessage}`
 
 player sends`{"command" : "join"}` if he's ready to start a game
 server replies `{"command" : "matched"}` as soon as the game is ready to begin
