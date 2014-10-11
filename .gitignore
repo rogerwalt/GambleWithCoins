@@ -1,6 +1,5 @@
 gobackend/bitcoin/blockchain-conf.json
 gobackend/bitcoin/blockchain-conf.test.json
 *~
-.DS_Store
 gobackend/masc/test.db
 gobackend/main
