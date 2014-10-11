@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"code.google.com/p/go.net/websocket"
+
+	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
 )
 
 // TODO: shutting down the server gracefully does not yet work
 func startServer() chan int {
-
 	time.Sleep(100 * time.Millisecond)
 	// use fresh db
 	os.Remove("./test.db")
@@ -28,9 +29,63 @@ func TestGame(t *testing.T) {
 	serverClose := startServer()
 
 	loginAndRegister(t)
+	testDatabase(t)
 	game(t)
 
 	serverClose <- 1
+}
+
+func testDatabase(t *testing.T) {
+	log.Println("Test: ----- testingDatabase() procedure -----")
+	balance, err := masc.GetBalance("foo")
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+	log.Println("Test: Balance of user foo:", balance)
+
+	log.Println("Test: Depositing 100 to user foo")
+	err = masc.UpdateBalance("foo", 100)
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+
+	balance, err = masc.GetBalance("foo")
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+	if (balance == 100) {
+		log.Println("Test: Balance of user foo:", balance)
+	} else {
+		log.Println("Test: ERROR: Expected balance of 100")
+	}
+
+	log.Println("Test: Depositing -50 to user foo")
+	err = masc.UpdateBalance("foo", -50)
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+
+	balance, err = masc.GetBalance("foo")
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+	if (balance == 50) {
+		log.Println("Test: Balance of user foo:", balance)
+	} else {
+		log.Println("Test: ERROR: Expected balance of 50")
+	}
+
+	log.Println("Test: Registering two users with two different names")
+	masc.Register("foo1", "bar1")
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+	masc.Register("foo2", "bar2")
+	if (err != nil) {
+		log.Println("Test: ERROR: ", err.Error())
+	}
+
+	log.Println("Test: ----- testingDatabase() ended -----")
 }
 
 func loginAndRegister(t *testing.T) {

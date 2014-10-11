@@ -22,6 +22,7 @@ import (
 
 type User struct {
 	name string
+	bet int					// bet of user in current round
 	conn *websocket.Conn
 }
 
@@ -59,7 +60,7 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				if err != nil {
 					return nil, err
 				}
-				return &User{m["name"].(string), ws}, nil
+				return &User{m["name"].(string), 0, ws}, nil
 			} else {
 				return nil, errors.New("Wrong password")
 			}
@@ -74,11 +75,12 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				if err != nil {
 					return nil, err
 				}
+				return &User{m["name"].(string), 0, ws}, nil
 			}
 		}
 	}
+	disconnectClient(nil, ws)
 	return nil, errors.New("Too many unsuccessful logins")
-
 }
 
 func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
@@ -105,8 +107,7 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 
 		// remove client if sends invalid data
 		if err != nil || !commandExists {
-			log.Println("Remove client due to invalid requests.")
-			ws.Close()
+			disconnectClient(user, ws)
 			return
 		}
 
@@ -167,8 +168,7 @@ func handleGame(user1, user2 *User) {
 
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -176,8 +176,7 @@ func handleGame(user1, user2 *User) {
 	if str, ok := f["command"].(string); ok {
 		action1 = str
 	} else {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -192,8 +191,7 @@ func handleGame(user1, user2 *User) {
 
 	// remove client if sends invalid data
 	if err != nil || !commandExists {
-		log.Println("Remove client due to invalid requests.")
-		user2.conn.Close()
+		disconnectClient(user2, user2.conn)
 		return
 	}
 
@@ -201,8 +199,7 @@ func handleGame(user1, user2 *User) {
 	if str, ok := f["command"].(string); ok {
 		action2 = str
 	} else {
-		log.Println("Remove client due to invalid requests.")
-		user1.conn.Close()
+		disconnectClient(user1, user1.conn)
 		return
 	}
 
@@ -271,5 +268,16 @@ func checkError(err error) {
 	if err != nil {
 		log.Println("Fatal error ", err.Error())
 		os.Exit(1)
+	}
+}
+
+func disconnectClient(user *User, ws *websocket.Conn) {
+	log.Println("Disconnecting client due to invalid requests.")
+	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
+	websocket.Message.Send(ws, toSend)
+	ws.Close()
+	if (user != nil) {
+		masc.UpdateBalance(user.name, -user.bet)
+		log.Println("User ", user.name, " loses his bet of ", user.bet)
 	}
 }
