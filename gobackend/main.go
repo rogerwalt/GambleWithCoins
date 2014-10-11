@@ -65,7 +65,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
 				log.Println("Client logged in")
-				b := []byte(`{"command": "login", "result" : "success"}`)
+				b := string([]byte(`{"command": "login", "result" : "success"}`))
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
@@ -92,7 +92,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 				return nil, &e
 			} else {
 				log.Println("Client registered")
-				b := []byte(`{"command": "register", "result" : "success"}`)
+				b := string([]byte(`{"command": "register", "result" : "success"}`))
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
@@ -157,12 +157,12 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				ready <- user
 			case "getBalance":
 				balance, _ := masc.GetBalance(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance))
+				b := string([]byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance)))
 				err = websocket.Message.Send(user.conn, b)
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
-				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
-					address))
+				b := string([]byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address)))
 				err = websocket.Message.Send(user.conn, b)
 			case "withdraw":
 				address := f["address"].(string)
@@ -170,10 +170,10 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				err := masc.Withdraw(user.name, amount, address)
 				var b []byte
 				if err != nil {
-					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
-												{"error": "%s"}}`, err.Error()))
+					b = string([]byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
+												{"error": "%s"}}`, err.Error())))
 				} else {
-					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
+					b = string([]byte(`{"command" : "withdraw", "result" : "success"}`))
 				}
 				err = websocket.Message.Send(user.conn, b)
 			}
