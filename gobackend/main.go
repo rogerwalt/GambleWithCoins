@@ -87,7 +87,7 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", "./foo.db")
+	db, err := sql.Open("sqlite3", "./masc.db")
 	checkError(err)
 	defer db.Close()
 
