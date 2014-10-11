@@ -1,11 +1,59 @@
 'use strict';
 
+var WebSocketHandler = {
+  isConnected: false,
+  webSocket: null,
+  connect: function() {
+    var ws = new WebSocket("ws://localhost:8080/play/");
+    WebSocketHandler.webSocket = ws;
+    ws.onopen = function() {
+      console.log("WebSocket opened");
+      WebSocketHandler.isConnected = true;
+      ws.onclose = function() {
+        console.log("WebSocket closed");
+        WebSocketHandler.ws = null;
+        WebSocketHandler.isConnected = false;
+      }
+    }
+  },
+  send: function(dataToSend, receiveCallback) {
+    // check if connected
+    if (WebSocketHandler.isConnected) {
+      // send stuff
+      WebSocketHandler.webSocket.send(JSON.stringify(dataToSend));
+      // make sure the receiveCallback is a function
+      //if (typeof callback === "function") {
+        // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
+        WebSocketHandler.webSocket.onmessage = function(message) {
+          receiveCallback(JSON.parse(message.data));
+        };
+      //} else {
+        //console.log("Error: Function is required for callback.");
+      //}
+    } else {
+      console.log("Error: Not yet connected.");
+    }
+  }
+};
+
+WebSocketHandler.connect({});
+
+
 /* Controllers */
 
 function AppCtrl($scope, $q, $rootScope) {
 
+//$scope.WebSocketHandler.send(JSON.)
+
+
+
 // Socket listeners
 // ================
+
+$(function () {
+    $('#info').popover({'html': true});
+
+});
 
 // For the timer
 $scope.roundProgressData = {
@@ -13,12 +61,13 @@ $scope.roundProgressData = {
       percentage: 0
 }
 
-$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
+$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
 $scope.signals = [];
 $scope.join = false;
 $scope.authenticated = false;
 $scope.matched = false;
-
+$scope.round = 1;
+$scope.balance = 0;
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -61,7 +110,9 @@ $scope.matched = false;
       }
 
       if(messageObj.command == "login" && messageObj.result == "success") {
+        console.log("Succesfully logged in!")
         $scope.authenticated = true;
+        console.log($scope.authenticated)
       }
 
       // If an object exists with callback_id in our callbacks object, resolve it
@@ -89,17 +140,16 @@ $scope.getBalance = function() {
 };
 
 $scope.login = function(name, password) {
-  ws.onopen = function(){  
-      var request = {command: 'login', name: name, password: password};
-      $scope.balance = sendRequest(request);
-  };
+  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
+    if(data.result == 'success') {
+      $scope.authenticated = true;
+    }
+  });
 };
 
 $scope.register = function(name, password) {
-  ws.onopen = function(){  
       var request = {command: 'register', name: name, password: password};
       $scope.balance = sendRequest(request);
-  };
 };
 
 
@@ -207,6 +257,15 @@ $scope.countDown = function(seconds) {
 }
 
 */
+
+$scope.$watch(function() {
+  return $('.popover.fade.in').attr('opacity'); 
+}, function(newValue){
+  if (newValue == 0) {
+    console.log('dissapear')
+  }
+
+});
 
 $scope.$watchCollection('signals', function() {
   console.log($('div.signaloverview').scrolltop);
