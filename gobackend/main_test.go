@@ -48,6 +48,7 @@ func loginAndRegister(t *testing.T) {
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
+	// receive answer from registration
 	var msg string
 	err = websocket.Message.Receive(conn, &msg)
 	checkError(err)
@@ -74,9 +75,32 @@ func game(t *testing.T) {
 	conn, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
+	log.Println("Test: Loggin in as player 1")
+	// send "join" command as player 1
+	b := []byte(`{"command": "login", "name" : "foo", "password" : "bar"}`)
+	err = websocket.Message.Send(conn, b)
+	checkError(err)
+
+	// receive answer from registration
+	var msg string
+	err = websocket.Message.Receive(conn, &msg)
+	checkError(err)
+
+	var f map[string]interface{}
+	err = json.Unmarshal([]byte(msg), &f)
+	checkError(err)
+	if f["command"] != "login" {
+		log.Println("Test: ERROR: Expected register, got", msg)
+	}
+	if f["result"] != "success" {
+		log.Println("Test: ERROR: Expected success, got ", msg)
+	}
+	log.Println("Test: Player 1 logged in")
+
+
 	// send "join" command as player 1
 	log.Println("Test: Joining as player 1")
-	b := []byte(`{"command": "join"}`)
+	b = []byte(`{"command": "join"}`)
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
@@ -92,12 +116,10 @@ func game(t *testing.T) {
 	checkError(err)
 
 	// receive "matched" message from server as player 2
-	var msg string
 	err = websocket.Message.Receive(conn2, &msg)
 	checkError(err)
 
 	// interpret message as JSON data
-	var f map[string]interface{}
 	err = json.Unmarshal([]byte(msg), &f)
 	checkError(err)
 

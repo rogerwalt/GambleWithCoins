@@ -53,7 +53,7 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	for i := 0; i < 3; i++ {
 		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
-				log.Println("Client tries to log in")
+				log.Println("Client logged in")
 				b := []byte(`{"command": "login", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
@@ -146,7 +146,7 @@ func Hub(ready chan *User) {
 				go handleGame(uWaiting, u)
 
 			} else {
-				log.Println("Appending client")
+				log.Println("Client joined")
 				waitingUsers = append(waitingUsers, u)
 			}
 		}
