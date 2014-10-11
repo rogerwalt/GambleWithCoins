@@ -28,6 +28,11 @@ var WebSocketHandler = {
     } else {
       console.log("Error: Not yet connected.");
     }
+  },
+  listen: function(receiveCallback) {
+    WebSocketHandler.webSocket.onmessage = function(message) {
+      receiveCallback(JSON.parse(message.data));
+    };
   }
 };
 
@@ -165,7 +170,6 @@ $scope.sendRequestOnOpen = function(request) {
 $scope.$watch('roundProgressData', function (newValue, oldValue) {
   newValue.percentage = newValue.label / 100;
 }, true);
-
 
 /*
 socket.on('')
