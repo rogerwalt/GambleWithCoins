@@ -22,7 +22,7 @@ import (
 
 type User struct {
 	name string
-	bet int					// bet of user in current round
+	bet  int // bet of user in current round
 	conn *websocket.Conn
 }
 
@@ -44,12 +44,12 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 
-/*
-	fmt.Printf("Map: %v", m)
-	fmt.Printf("Name: %v", m["name"])
-	fmt.Printf("Password: %v", m["password"])
-	fmt.Println("___________________________")
-*/
+	/*
+		fmt.Printf("Map: %v", m)
+		fmt.Printf("Name: %v", m["name"])
+		fmt.Printf("Password: %v", m["password"])
+		fmt.Println("___________________________")
+	*/
 
 	for i := 0; i < 3; i++ {
 		if m["command"].(string) == "login" {
@@ -228,6 +228,8 @@ func main() {
 func start(dbName string, serverClose chan int) {
 	log.Println("Starting server")
 
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+
 	db, err := sql.Open("sqlite3", dbName)
 	checkError(err)
 	masc.SetupDb(db)
@@ -276,7 +278,7 @@ func disconnectClient(user *User, ws *websocket.Conn) {
 	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
-	if (user != nil) {
+	if user != nil {
 		masc.UpdateBalance(user.name, -user.bet)
 		log.Println("User ", user.name, " loses his bet of ", user.bet)
 	}
