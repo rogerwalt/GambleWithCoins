@@ -31,6 +31,9 @@ var WebSocketHandler = {
   }
 };
 
+WebSocketHandler.connect({});
+
+
 /* Controllers */
 
 function AppCtrl($scope, $q, $rootScope) {
@@ -43,7 +46,7 @@ function AppCtrl($scope, $q, $rootScope) {
 // ================
 
 $(function () {
-    $('#login').popover({'html': true});
+    $('#info').popover({'html': true});
 
 });
 
@@ -58,6 +61,8 @@ $scope.signals = [];
 $scope.join = false;
 $scope.authenticated = false;
 $scope.matched = false;
+$scope.round = 1;
+$scope.balance = 0;
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -100,7 +105,9 @@ $scope.matched = false;
       }
 
       if(messageObj.command == "login" && messageObj.result == "success") {
+        console.log("Succesfully logged in!")
         $scope.authenticated = true;
+        console.log($scope.authenticated)
       }
 
       // If an object exists with callback_id in our callbacks object, resolve it
@@ -128,18 +135,16 @@ $scope.getBalance = function() {
 };
 
 $scope.login = function(name, password) {
-  console.log("Logging in as ")
-  ws.onopen = function(){  
-      var request = {command: 'login', name: name, password: password};
-      $scope.balance = sendRequest(request);
-  };
+  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
+    if(data.result == 'success') {
+      $scope.authenticated = true;
+    }
+  });
 };
 
 $scope.register = function(name, password) {
-  ws.onopen = function(){  
       var request = {command: 'register', name: name, password: password};
       $scope.balance = sendRequest(request);
-  };
 };
 
 
