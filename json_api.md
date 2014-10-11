@@ -1,6 +1,7 @@
 # JSON API
 
-### login
+## Authentification
+### login and register
 player has to be logged in before he can join a game.
 
 
@@ -13,10 +14,19 @@ returns either
 
 `{"command" : "login", "result" : "success"}`
 
-or `{"error" : errormessage}`
+or `{"command" : "login", "result" {"error" : error_message}}`
 
-### general
-`{"command" : "balance", "balance" : ?}` is sent from the server whenever a balance update occurs
+## general
+### balance
+`{"command" : "getBalance"}` is sent from the client to server to retrieve the current balance
+`{"command" : "balance", "result" : ?}` is sent from the server whenever requested or a balance update occurs
+
+`{"command" : "getDepositAddress"}` client -> server
+`{"command" : "depositAddress", "result" : ?}` server -> client
+
+`{"command" : "withdraw", "address" : ?}` client -> server
+`{"command" : "withdraw", "result" : ?}` server -> client
+
 
 ### setup game
 player sends`{"command" : "join"}` if he's ready to start a game,
