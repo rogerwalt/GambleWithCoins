@@ -2,6 +2,7 @@ package bitcoin
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 )
 
@@ -20,7 +21,12 @@ func TestNewAddress(t *testing.T) {
 	fmt.Println("New transaction txhash: ", txhash)
 
 	//test receiving coins
-
+	unconfirmed := make(chan *RecvTransaction)
+	confirmed := make(chan *RecvTransaction)
+	http.HandleFunc(fmt.Sprintf("/receive/%s/", callback_secret),
+		ReceiveCallback(unconfirmed, confirmed))
+	fmt.Println("kill process, because its listening")
+	http.ListenAndServe(":8080", nil)
 }
 
 func checkError(t *testing.T, err error) {
