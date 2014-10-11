@@ -48,6 +48,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		e.command = "_undefined"
 		return nil, &e
 	}
+	log.Printf("Authenticate: Received data from client with RemoteAddr: %v", ws.RemoteAddr())
 
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
@@ -71,11 +72,13 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 					e.command = "login"
 					return nil, &e
 				}
+				log.Println("Authenticate:",m["name"],"logged in")
 				return &User{m["name"].(string), 0, ws}, nil
 			} else {
 				e.message = "Wrong username or password."
 				e.code = 1
 				e.command = "login"
+				log.Printf("Authenticate: %v entered wront username or password",m["name"].(string))
 				return nil, &e
 			}
 		} else if m["command"].(string) == "register" {
@@ -84,6 +87,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 				e.message = "Could not register new user:" + err.Error()
 				e.code = 999
 				e.command = "register"
+				log.Println("Authenticate:",m["name"],"could not register")
 				return nil, &e
 			} else {
 				log.Println("Client registered")
@@ -93,8 +97,10 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 					e.message = "Could not send back data to client:" + err.Error()
 					e.code = 99
 					e.command = "login"
+					log.Println("Authenticate:",m["name"],"did not receive data")
 					return nil, &e
 				}
+				log.Println("Authenticate:",m["name"],"registered successfully")
 				return &User{m["name"].(string), 0, ws}, nil
 			}
 		}
@@ -109,6 +115,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 	} else {
 		e.command = "_undefined"
 	}
+	log.Println("Authenticate: Too many unsuccessful logins")
 	return nil, &e
 }
 
@@ -123,6 +130,7 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			return
 		}
 
+		log.Println("makeGame:",user.name,"Successfully authenticated")
 		for {
 			var msg string
 			err := websocket.Message.Receive(ws, &msg)
@@ -171,6 +179,7 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			<-close
 			ws.Close()
 		}
+		log.Println("makeGame: End")
 	}
 }
 
@@ -258,6 +267,7 @@ func handleGame(user1, user2 *User) {
 
 	log.Println("Received actions.")
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
+	log.Println("handleGame:",user1.name,"and",user2.name,"successfully playied a game")
 	masc.AddAction(user1.name, action1)
 	masc.AddAction(user2.name, action2)
 	err = websocket.Message.Send(user1.conn, strconv.Itoa(p1))
