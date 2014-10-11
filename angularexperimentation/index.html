@@ -8,11 +8,11 @@
 	<meta name="author" content="">
 	<link rel="icon" href="../../favicon.ico">
 
-	<title>Jumbotron Template for Bootstrap</title>
+	<title>Gamble with coins</title>
 
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 
 
 	<!-- Optional theme -->
@@ -27,21 +27,22 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
 	<script type="text/javascript" src="angular-round-progress-directive.js"></script>
 
-	      <script>
-      var app = angular.module('angularjs-starter', ['angular.directives-round-progress']);
+	<script>
+		var app = angular.module('angularjs-starter', ['angular.directives-round-progress']);
 
-      app.controller('MainCtrl', function($scope) {
-        $scope.roundProgressData = {
-          label: 11,
-          percentage: 0.11
-        }
+		app.controller('MainCtrl', function($scope) {
+			$scope.roundProgressData = {
+				label: 11,
+				percentage: 0.11
+			}
 
         // Here I synchronize the value of label and percentage in order to have a nice demo
         $scope.$watch('roundProgressData', function (newValue, oldValue) {
-          newValue.percentage = newValue.label / 100;
+        	newValue.percentage = newValue.label / 100;
         }, true);
-      });
-      </script>
+    });
+
+	</script>
 
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 
@@ -56,7 +57,7 @@
   </head>
 
   <body ng-controller="MainCtrl">
-
+ 	<div class="upperpart">
   	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
   		<div class="container">
   			<div class="navbar-header">
@@ -67,12 +68,12 @@
   					<span class="icon-bar"></span>
   				</button>
   				<a class="navbar-brand" href="#">
-  				 	BG
+  					Gamble With Coins
   				</a>
   			</div>
   			<div class="navbar-collapse collapse">
   				<form class="navbar-form navbar-right" role="form">
-  				  	<button class="btn bnt-mainmenu">Settings</button>
+  					<button class="btn bnt-mainmenu">Settings</button>
   					<button class="btn bnt-mainmenu">Manage balance</button>
   				</form>
   			</div><!--/.navbar-collapse -->
@@ -80,58 +81,99 @@
   	</div>
 
   	<!-- Main jumbotron for a primary marketing message or call to action -->
-  	<div class="jumbotron">
+  	<div class="jumbotron header">
   		<div class="container balance">
-  			 	<h1>Your balance:</h1>
-  			 	<p>$109</p>
+  			<h1>Your balance:</h1>
+  			<p>$109</p>
   		</div>
-  		 <div class="container rounds">
-  		  		<h2>Round 1</h2>
+  		<div class="container rounds">
+  			<h2>Round 1</h2>
   		</div>
   	</div>
 
+ 	<div class="jumbotron center">
   	<div class="container galaxy">
   		<!-- Example row of columns -->
   		<div class="row">
-  			<div class="col-md-4">
-<i class="fa fa-check-circle fa-5x"></i>
+  			<div class="col-md-4 col-xs-4">
+  			    <span class="fa-stack fa-4x transparant">
+  					<i class="fa fa-circle-thin fa-stack-2x"></i>
+  					<i class="fa fa-check-circle fa-stack-1x"></i>
+  				</span>
   			</div>
-  			<div class="col-md-4">
+  			<div class="col-md-4 col-xs-4">
+ 				
+  				<div ang:round:progress data-round-progress-model="roundProgressData"
+  				data-round-progress-width="85"
+  				data-round-progress-height="100"
+  				data-round-progress-outer-circle-width="10"
+  				data-round-progress-outer-circle-radius="30"
+  				data-round-progress-label-font="15pt Arial"
+  				data-round-progress-outer-circle-background-color="rgba(255, 255, 255, 0.2)"
+  				data-round-progress-outer-circle-foreground-color="rgba(255, 255, 255, 0.9)"
+  				data-round-progress-inner-circle-color="#505769"
+  				data-round-progress-label-color="#fff"></div>
 
-    <div ang:round:progress data-round-progress-model="roundProgressData"
-                            data-round-progress-width="85"
-                            data-round-progress-height="85"
-                            data-round-progress-outer-circle-width="10"
-                            data-round-progress-outer-circle-radius="30"
-                            data-round-progress-label-font="15pt Arial"
-                            data-round-progress-outer-circle-background-color="rgba(255, 255, 255, 0.2)"
-                            data-round-progress-outer-circle-foreground-color="rgba(255, 255, 255, 0.9)"
-                            data-round-progress-inner-circle-color="#505769"
-                            data-round-progress-label-color="#fff"></div>
-
-    <input type="number" ng-model="roundProgressData.label"/>
+  				<!-- <input type="number" ng-model="roundProgressData.label"/> -->
   			</div>
-  			<div class="col-md-4">
+  			<div class="col-md-4 col-xs-4">
 
-  			<span class="fa-stack fa-lg fa-icon-large">
-   			<i class="fa fa-circle fa-stack-2x"></i>
-   			<i class="fa fa-times-circle fa-stack-1x"></i>
-</span>
+  				<span class="fa-stack fa-4x transparant">
+  					<i class="fa fa-circle-thin fa-stack-2x"></i>
+  					<i class="fa fa-times-circle fa-stack-1x"></i>
+  				</span>
   			</div>
   		</div>
 
+ 		<div class="row">
+ 		<p>Chat with your opponent...</p>
+ 		</div>
+  		 <div class="row chat-menu">
+  					<i class="fa fa-times-circle fa-4x"></i>
+  					<i class="fa fa-check-circle fa-4x"></i>
+  					<i class="fa fa-smile-o fa-4x"></i>
+  					 <i class="fa fa-frown-o fa-4x"></i>
+  				</span>
+  		</div>
+  	</div>
+  	</div>
   	</div>
 
-  	  	<div class="jumbotron messagefield">
+  	<div class="jumbotron messagefield">
   		<div class="container">
- 			<p>Just message me ok </p>
-  		<footer>
-  		  		<hr>
+  		 	<div class="col-xs-6 col-md-4 pull-left text-left">You </div>
+  		 	<div class="col-xs-6 col-md-4 pull-right text-right">Opponent<i class="fa fa-bar-chart lg"></i></div>
+  		</div>
+  		<div class="container">
+  		  		 	<hr>
 
-  			<p>&copy; Company 2014</p>
-  		</footer>
+  		 	<div class="row message text-left">
+  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
+  		 	</div>
+
+  		 	 <div class="row message text-right">
+  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
+  		 	</div>
+
+  		 	  		 	<div class="row message text-left">
+  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
+  		 	</div>
+
   		</div>
   	</div>
-  	 <!-- /container -->
-</body>
-</html>
+  	<!-- /container -->
+  </body>
+  			<footer>
+  			<div class="container">
+  			 			<hr>
+
+  				<p>&copy; The coding pandas 2014</p>
+  				</div>
+  			</footer>
+  </html>
+
+  <script>
+  		$(window).resize(function(){
+			$('.messagefield').height(($(window).height() - $('.upperpart').height() - $('footer').height() - 20 + "px"));
+		});
+</script>
