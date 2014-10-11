@@ -36,6 +36,8 @@ var WebSocketHandler = {
   }
 };
 
+WebSocketHandler.connect({});
+
 
 /* Controllers */
 
@@ -138,9 +140,11 @@ $scope.getBalance = function() {
 };
 
 $scope.login = function(name, password) {
-  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data)) {
-    console.log(data);
-  }
+  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
+    if(data.result == 'success') {
+      $scope.authenticated = true;
+    }
+  });
 };
 
 $scope.register = function(name, password) {
