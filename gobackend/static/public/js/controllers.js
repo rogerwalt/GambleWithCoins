@@ -47,18 +47,22 @@ function AppCtrl($scope, $q, $rootScope) {
 // Socket listeners
 // ================
 
+$(function () {
+    $('#login').popover({'html': true});
+
+});
+
 // For the timer
 $scope.roundProgressData = {
       label: 0,
       percentage: 0
 }
 
-$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
+$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
 $scope.signals = [];
 $scope.join = false;
 $scope.authenticated = false;
 $scope.matched = false;
-
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -129,6 +133,7 @@ $scope.getBalance = function() {
 };
 
 $scope.login = function(name, password) {
+  console.log("Logging in as ")
   ws.onopen = function(){  
       var request = {command: 'login', name: name, password: password};
       $scope.balance = sendRequest(request);
@@ -247,6 +252,15 @@ $scope.countDown = function(seconds) {
 }
 
 */
+
+$scope.$watch(function() {
+  return $('.popover.fade.in').attr('opacity'); 
+}, function(newValue){
+  if (newValue == 0) {
+    console.log('dissapear')
+  }
+
+});
 
 $scope.$watchCollection('signals', function() {
   console.log($('div.signaloverview').scrolltop);
