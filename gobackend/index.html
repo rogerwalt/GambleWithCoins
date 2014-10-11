@@ -95,11 +95,11 @@
   			</div>
 
   			<div class="col-md-4 col-xs-4" ng-class="{higher: !join}">
-           <div class="secretlogin" ng-show="!authenticated">
-            <form class="form-signin" role="form">
+           <div class="secretlogin"  ng-show="!authenticated">
+            <form class="form-signin" ng-submit="login(loginForm.name, loginForm.pass)" role="form">
             <input ng-model="loginForm.name" type="name" class="form-control" placeholder="Name" required autofocus></input>
             <input ng-model="loginForm.pass" ng-click="login" type="password" class="form-control" placeholder="Password" required></input>
-            <button ng-click="login(loginForm.name, loginForm.pass)" class="btn bnt-mainmenu btn-block">Sign in</button>
+            <button class="btn bnt-mainmenu btn-block">Sign in</button>
             </form> 
           </div>
 

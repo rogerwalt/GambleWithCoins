@@ -43,13 +43,6 @@ WebSocketHandler.connect({});
 
 function AppCtrl($scope, $q, $rootScope) {
 
-//$scope.WebSocketHandler.send(JSON.)
-
-
-
-// Socket listeners
-// ================
-
 $(function () {
     $('#info').popover({'html': true});
 
@@ -68,6 +61,9 @@ $scope.authenticated = false;
 $scope.matched = false;
 $scope.round = 1;
 $scope.balance = 0;
+//$scope.authenticated = true;
+//$scope.matched = true;
+//$scope.join = true;
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -132,19 +128,23 @@ $scope.balance = 0;
     }
 
 $scope.getBalance = function() {
-  ws.onopen = function(){  
-      console.log("Socket has been opened!");  
-      var request = {command: 'getBalance'};
-      $scope.balance = sendRequest(request);
-  };
+  WebSocketHandler.send({'command': 'getBalance'}, function(data) {
+    if(data.command == 'balance') {
+      console.log(data)
+      console.log('balance: ' + data.result);
+      $scope.balance = data.result;
+    }
+  });
 };
 
 $scope.login = function(name, password) {
   WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
     if(data.result == 'success') {
       $scope.authenticated = true;
+      $scope.getBalance();
     }
   });
+
 };
 
 $scope.register = function(name, password) {
@@ -158,17 +158,13 @@ $scope.register = function(name, password) {
 
 // Player indicates he wants to start a new game
 $scope.joinGame = function() {
-  console.log('join game')
-  var request = {command: "join"}
-  $scope.sendRequestOnOpen(request);
-  $scope.join = true
+  WebSocketHandler.send({'command': 'join'});
+  $scope.join = true;
 }
 
 $scope.sendRequestOnOpen = function(request) {
   return sendRequest(request);
 }
-
-//$scope.login('Roger', 'lotteiscool');
 
 $scope.$watch('roundProgressData', function (newValue, oldValue) {
   newValue.percentage = newValue.label / 100;
@@ -237,16 +233,6 @@ $scope.sendAction = function(action) {
 };
 
 // The player sends a signal to the other player
-$scope.sendSignal = function(signal) {
-  socket.emit('send:signal', {
-    signal: signal
-  })
-
-  $scope.signals.push({
-    player: 'you',
-    signal: signal
-  });
-}
 
 $scope.countDown = function(seconds) {
   $scope.roundProgressData.percentage = 0
@@ -261,6 +247,13 @@ $scope.countDown = function(seconds) {
 
 */
 
+$scope.sendSignal = function(signal) {
+  $scope.signals.push({'player': 'you', 'signal': signal});
+  WebSocketHandler.send({command: 'signal', signal: signal}, function(data) {
+    console.log(data);
+  });
+}
+
 $scope.$watch(function() {
   return $('.popover.fade.in').attr('opacity'); 
 }, function(newValue){
@@ -274,23 +267,5 @@ $scope.$watchCollection('signals', function() {
   console.log($('div.signaloverview').scrolltop);
   $(".signaloverview").animate({ scrollTop: $('.signaloverview').height()}, 1000);
 });
-
-
-/*$scope.changeName = function () {
-  socket.emit('change:name', {
-    name: $scope.newName
-  }, function (result) {
-    if (!result) {
-      alert('There was an error changing your name');
-    } else {
-      
-      changeName($scope.name, $scope.newName);
-
-      $scope.name = $scope.newName;
-      $scope.newName = '';
-    }
-  });
-};
-*/
 
 }
