@@ -92,8 +92,8 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 				return nil, &e
 			} else {
 				log.Println("Client registered")
-				b := string([]byte(`{"command": "register", "result" : "success"}`))
-				err = websocket.Message.Send(ws, b)
+				b := []byte(`{"command": "register", "result" : "success"}`)
+				err = websocket.Message.Send(ws, string(b))
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
 					e.code = 99
@@ -161,9 +161,9 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				err = websocket.Message.Send(user.conn, string(b))
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
-				b := string([]byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
-					address)))
-				err = websocket.Message.Send(user.conn, b)
+				b := []byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+					address))
+				err = websocket.Message.Send(user.conn, string(b))
 			case "withdraw":
 				address := f["address"].(string)
 				amount := f["amount"].(int)
@@ -194,13 +194,13 @@ func Hub(ready chan *User) {
 				uWaiting := waitingUsers[len(waitingUsers)-1]
 				waitingUsers = waitingUsers[:len(waitingUsers)-1]
 
-				err := websocket.Message.Send(uWaiting.conn, []byte(`{"command": "matched"}`))
+				err := websocket.Message.Send(uWaiting.conn, string([]byte(`{"command": "matched"}`)))
 				if err != nil {
 					uWaiting.conn.Close()
 					waitingUsers = append(waitingUsers, u)
 				}
 
-				err = websocket.Message.Send(u.conn, []byte(`{"command": "matched"}`))
+				err = websocket.Message.Send(u.conn, string([]byte(`{"command": "matched"}`)))
 				if err != nil {
 					u.conn.Close()
 					waitingUsers = append(waitingUsers, uWaiting)
@@ -485,7 +485,7 @@ func checkError(err error) {
 
 func disconnectClient(user *User, ws *websocket.Conn) {
 	log.Println("Disconnecting client due to invalid requests.")
-	toSend := string([]byte(`{"result": {"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": ` + strconv.Itoa(10) + `}}`))
-	websocket.Message.Send(ws, toSend)
+	toSend := []byte(`{"result": {"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": ` + strconv.Itoa(10) + `}}`)
+	websocket.Message.Send(ws, string(toSend))
 	ws.Close()
 }
