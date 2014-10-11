@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -27,7 +26,7 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 
 		// interpret message as json data
 		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
-		var f interface{}
+		var f map[string]interface{}
 		err = json.Unmarshal([]byte(msg), &f)
 		// remove client if sends invalid data
 		if err != nil {
@@ -36,11 +35,9 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 			return
 		}
 
-		log.Printf("json received: %v", f)
-
-		msg = strings.Trim(msg, "\"")
-		if msg == "join" {
-			log.Println("Client wants to join")
+		// check what the command is; here only join is allowed
+		if f["command"] == "join" {
+			fmt.Println("Client wants to join")
 			ready <- ws
 		}
 		<-close
