@@ -335,6 +335,8 @@ ActionLoop:
 			action2 = receiveAction(msg, user1.sendChan, chose, 2, action2)
 		case <-timer.C:
 			log.Println("Time is up")
+			user1.sendChan <- fmt.Sprintf(`{ "command": "timerEnd"}`)
+			user2.sendChan <- fmt.Sprintf(`{ "command": "timerEnd"}`)
 			break ActionLoop
 		case <-ready:
 			log.Println("Both Players have chosen their actions")
