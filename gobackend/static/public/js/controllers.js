@@ -148,8 +148,11 @@ $scope.login = function(name, password) {
 };
 
 $scope.register = function(name, password) {
-      var request = {command: 'register', name: name, password: password};
-      $scope.balance = sendRequest(request);
+  WebSocketHandler.send({command: 'register', name: name, password: password}, function(data) {
+    if(data.result == 'success') {
+      $scope.authenticated = true;
+    }
+  });
 };
 
 
