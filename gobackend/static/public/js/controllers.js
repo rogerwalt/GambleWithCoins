@@ -14,16 +14,30 @@ function AppCtrl($scope) {
   }
 
   var connection = new WebSocket("ws://localhost:8080/play/",'json');
-  connection.onopen = function () {
-    var request = {command: 'register', name: 'Roger', password: 'lotteiscool'};
-    connection.send(JSON.stringify(request)); //send a message to server once connection is opened.
-  };
-  connection.onerror = function (error) {
-    console.log('Error Logged: ' + error); //log errors
-  };
-  connection.onmessage = function (e) {
-    console.log('Received From Server: ' + e.data); //log the received message
-  };
+
+  var sendRequest = function(request) {
+    connection.onopen = function () {
+      connection.send(JSON.stringify(request)); //send a message to server once connection is opened.
+    };
+
+    connection.onerror = function (error) {
+      console.log('Error Logged: ' + error); //log errors
+      return false;
+    };
+
+    connection.onmessage = function (e) {
+      console.log('Received From Server: ' + e.data); //log the received message
+      return e.data;
+    };
+  }
+
+  $scope.getBalance = function() {
+    var request = {command: 'getBalance'};
+    return sendRequest(request);
+  }
+
+  console.log('Check that balance');
+  console.log($scope.getBalance());
 
   //$scope.customers = WebSocketFactory.getCustomers();
 
@@ -35,9 +49,6 @@ function AppCtrl($scope) {
 
   $scope.signals = [{player: 'you', signal: 1}, {player:'opposite', signal: 2}];
   $scope.join = false;
-
-  console.log($scope.join);
-  console.log($scope.matched);
 
   /*
   socket.on('')
@@ -137,7 +148,6 @@ function AppCtrl($scope) {
     console.log($('div.signaloverview').scrolltop);
     $(".signaloverview").animate({ scrollTop: $('.signaloverview').height()}, 1000);
   });
-
 
   /*$scope.changeName = function () {
     socket.emit('change:name', {
