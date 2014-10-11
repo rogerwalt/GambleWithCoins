@@ -32,13 +32,20 @@ or `{"command" : "login", "result" {"error" : error_message}}`
 
 ### setup game
 player sends`{"command" : "join"}` if he's ready to start a game,
-server replies `{"command" : "matched"}` as soon as the game is ready to begin. 
+server replies `{"command" : "matched"}` if an opponent is found. 
 Note that as soon as the game begins, the player is not allowed to use non-game related commands (like getDepositAddress or withdraw)
+server sends `{"command" : "startRound"}` if it is ready to receive actions
 
 #### When round is running
 player sends `{"command" : "action", "action" : "cooperate"}` or `{"command" : "action", "action" : "defect"}`
 Smileys for other player with `{"command" : "signal", "signal" : ?}`
+Player receives `{"command" : "action", "action" : "chosen"}` if other player has chosen
 
 #### After every round server replies
-`{ "command": "outcome", ... }`
+`{ "command": "endRound", "outcome" : {"me" : action, "other" :action}, 
+"balanceDifference" : {"me" : balanceDiff, "other" : balanceDiff}}`
+
+### When game ends
+`{ "command": "endGame"}`
+
 

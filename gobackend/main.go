@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -22,7 +22,6 @@ import (
 
 type User struct {
 	name string
-	bet  int // bet of user in current round
 	conn *websocket.Conn
 }
 
@@ -60,7 +59,7 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				if err != nil {
 					return nil, err
 				}
-				return &User{m["name"].(string), 0, ws}, nil
+				return &User{m["name"].(string), ws}, nil
 			} else {
 				return nil, errors.New("Wrong password")
 			}
@@ -75,7 +74,7 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				if err != nil {
 					return nil, err
 				}
-				return &User{m["name"].(string), 0, ws}, nil
+				return &User{m["name"].(string), ws}, nil
 			}
 		}
 	}
@@ -178,63 +177,210 @@ func Hub(ready chan *User) {
 	}
 }
 
+func receiver(ws *websocket.Conn) (<-chan string, chan error) {
+	ch, errCh := make(chan string), make(chan error)
+	go func() {
+		for {
+			var s string
+			err := websocket.Message.Receive(ws, &s)
+			if err != nil {
+				errCh <- err
+				close(ch)
+				return
+			}
+			ch <- s
+		}
+	}()
+	return ch, errCh
+}
+
+func sender(ws *websocket.Conn) (chan string, chan error) {
+	ch, errCh := make(chan string), make(chan error)
+	go func() {
+		for {
+			s := <-ch
+			if err := websocket.Message.Send(ws, s); err != nil {
+				errCh <- err
+				close(ch)
+				return
+			}
+		}
+	}()
+	return ch, errCh
+}
+
+// takes on input channel the player a player that has chosen his action
+// signals on channel ready when both players have chosen
+func choseNotifier() (chan int, chan int) {
+	ready := make(chan int)
+	input := make(chan int)
+	player1Chosen := false
+	player2Chosen := false
+	go func() {
+		for {
+			x := <-input
+			if x == 1 {
+				player1Chosen = true
+			} else {
+				player2Chosen = true
+			}
+			if player1Chosen && player2Chosen {
+				ready <- 1
+				return
+			}
+		}
+	}()
+	return input, ready
+}
+
+func handleGameRound(user1, user2 *User, b, E int) {
+
+	timer := time.NewTimer(time.Second * 30)
+	chose, ready := choseNotifier()
+	recv1, _ := receiver(user1.conn)
+	sender1, _ := sender(user1.conn)
+	recv2, _ := receiver(user2.conn)
+	sender2, _ := sender(user2.conn)
+	// send startRound to players
+	sender1 <- `{"command" : "startRound"}`
+	sender2 <- `{"command" : "startRound"}`
+
+	log.Println("Waiting for players actions in round.")
+	action1, action2 := "", ""
+
+	receiveAction := func(msg string, sender chan string,
+		chose chan int, player int, action string) string {
+		log.Println("Received something")
+		var f map[string]interface{}
+		json.Unmarshal([]byte(msg), &f)
+
+		if f["command"] == "action" {
+			action = f["action"].(string)
+			log.Println("Received action from player", player, action)
+			sender <- `{"command" : "action", "action" : "chosen"}`
+			chose <- player
+			return action
+		} else if f["command"] == "signal" {
+			signal := f["signal"]
+			log.Println("Received signal from player", player, signal)
+			sender <- fmt.Sprintf(`{"command" : "signal", "signal" : %s}`, signal)
+		}
+		return action
+	}
+
+	// wait for clients to send something
+ActionLoop:
+	for {
+		select {
+		case msg := <-recv1:
+			action1 = receiveAction(msg, sender2, chose, 1, action1)
+		case msg := <-recv2:
+			action2 = receiveAction(msg, sender1, chose, 2, action2)
+		case <-timer.C:
+			log.Println("Time is up")
+			break ActionLoop
+		case <-ready:
+			log.Println("Both Players have chosen their actions")
+			break ActionLoop
+		}
+
+	}
+
+	// check if all players have chosen
+	switch {
+	case action1 == "" && action2 == "":
+		log.Println("Nobody has chosen")
+		// bank wins
+	case action1 == "":
+		log.Println("Player 1 has not chosen")
+		//player2 wins
+	case action2 == "":
+		log.Println("Player 2 has not chosen")
+		//player1 wins
+	}
+
+	log.Println("Received actions: ", action1, action2)
+	p1, p2 := masc.PrisonersDilemma(action1, action2, b, E)
+
+	err := websocket.Message.Send(user1.conn,
+		fmt.Sprintf(`{ "command": "endRound", 
+						"outcome" : {"me" : %s, "other" : %s}, 
+						"balanceDifference" : {"me" : %d, 
+											   "other" : %d}}`,
+			action1, action2, p1, p2))
+	checkError(err)
+
+	err = websocket.Message.Send(user2.conn,
+		fmt.Sprintf(`{ "command": "endRound", 
+						"outcome" : {"me" : %s, "other" : %s}, 
+						"balanceDifference" : {"me" : %d, 
+											   "other" : %d}}`,
+			action2, action1, p2, p1))
+	checkError(err)
+	log.Println("Sent payoffs", p1, p2)
+
+	log.Println("Update balances")
+	masc.UpdateBalance(user1.name, p1)
+	masc.UpdateBalance(user2.name, p2)
+
+	return
+}
+
+//TODO: handle more errors
 func handleGame(user1, user2 *User) {
-	var action1, action2 string
-	err := websocket.Message.Receive(user1.conn, &action1)
-	checkError(err)
+	bet := 1000
+	p := 0.2
+	E := int(0.2 * float64(bet))
 
-	// interpret message as json data
-	// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
-	var f map[string]interface{}
-	err = json.Unmarshal([]byte(action1), &f)
+RoundLoop:
+	for {
+		log.Println("New game round")
 
-	_, commandExists := f["command"]
+		// check if players have enough funds to play a round
+		balance1, _ := masc.GetBalance(user1.name)
+		balance2, _ := masc.GetBalance(user2.name)
+		log.Println("Players balance: ", balance1, balance2)
 
-	// remove client if sends invalid data
-	if err != nil || !commandExists {
-		disconnectClient(user1, user1.conn)
-		return
+		endGame := func() {
+			err := websocket.Message.Send(user1.conn, []byte(`{"command": "endGame"}`))
+			checkError(err)
+			err = websocket.Message.Send(user2.conn, []byte(`{"command": "endGame"}`))
+			checkError(err)
+		}
+		switch {
+		case balance1 < bet && balance2 < bet:
+			log.Println("Both players have not enough funds left")
+			endGame()
+			break RoundLoop
+		case balance1 < bet:
+			// player 2 gets the remaining money and the game ends
+			log.Println("Player 1 does not have enough funds left")
+			endGame()
+			break RoundLoop
+		case balance2 < bet:
+			//player 1 gets the remaining money and the game ends
+			log.Println("Player 2 does not have enough funds left")
+			endGame()
+			break RoundLoop
+		}
+
+		// players have sufficient funds for the next round
+		// check if game ends
+		//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
+		r := rand.Intn(100)
+		if float64(r) <= 100*p {
+			log.Println("End game: bank wins bets.")
+			masc.UpdateBalance(user1.name, -bet)
+			masc.UpdateBalance(user2.name, -bet)
+			//end game
+			endGame()
+			break RoundLoop
+		}
+
+		handleGameRound(user1, user2, bet, E)
 	}
 
-	// try to convert action1 to string
-	if str, ok := f["command"].(string); ok {
-		action1 = str
-	} else {
-		disconnectClient(user1, user1.conn)
-		return
-	}
-
-	err = websocket.Message.Receive(user2.conn, &action2)
-	checkError(err)
-
-	// interpret message as json data
-	// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
-	err = json.Unmarshal([]byte(action2), &f)
-
-	_, commandExists = f["command"]
-
-	// remove client if sends invalid data
-	if err != nil || !commandExists {
-		disconnectClient(user2, user2.conn)
-		return
-	}
-
-	// try to convert action2 to string
-	if str, ok := f["command"].(string); ok {
-		action2 = str
-	} else {
-		disconnectClient(user1, user1.conn)
-		return
-	}
-
-	log.Println("Received actions:")
-	p1, p2 := masc.PrisonersDilemma(action1, action2)
-	err = websocket.Message.Send(user1.conn, strconv.Itoa(p1))
-	checkError(err)
-
-	err = websocket.Message.Send(user2.conn, strconv.Itoa(p2))
-	checkError(err)
-	log.Println("Sent payoffs")
+	return
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
@@ -246,12 +392,13 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	serverClose := make(chan int)
-	start("./masc.db", 8080, serverClose)
+	start("./masc.db", 8080, serverClose, time.Now().UTC().UnixNano())
 }
 
-func start(dbName string, port int, serverClose chan int) {
+func start(dbName string, port int, serverClose chan int, seed int64) {
 	log.Println("Starting server")
 
+	rand.Seed(seed)
 	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
 
 	db, err := sql.Open("sqlite3", dbName)
@@ -302,8 +449,4 @@ func disconnectClient(user *User, ws *websocket.Conn) {
 	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
-	if user != nil {
-		masc.UpdateBalance(user.name, -user.bet)
-		log.Println("User ", user.name, " loses his bet of ", user.bet)
-	}
 }
