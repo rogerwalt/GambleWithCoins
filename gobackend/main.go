@@ -22,7 +22,7 @@ import (
 
 type User struct {
 	name string
-	bet int					// bet of user in current round
+	bet  int // bet of user in current round
 	conn *websocket.Conn
 }
 
@@ -44,12 +44,12 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 
-/*
-	fmt.Printf("Map: %v", m)
-	fmt.Printf("Name: %v", m["name"])
-	fmt.Printf("Password: %v", m["password"])
-	fmt.Println("___________________________")
-*/
+	/*
+		fmt.Printf("Map: %v", m)
+		fmt.Printf("Name: %v", m["name"])
+		fmt.Printf("Password: %v", m["password"])
+		fmt.Println("___________________________")
+	*/
 
 	for i := 0; i < 3; i++ {
 		if m["command"].(string) == "login" {
@@ -222,11 +222,13 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	serverClose := make(chan int)
-	start("./masc.db", serverClose)
+	start("./masc.db", 8080, serverClose)
 }
 
-func start(dbName string, serverClose chan int) {
+func start(dbName string, port int, serverClose chan int) {
 	log.Println("Starting server")
+
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
 
 	db, err := sql.Open("sqlite3", dbName)
 	checkError(err)
@@ -245,14 +247,14 @@ func start(dbName string, serverClose chan int) {
 
 	http.Handle("/play/", websocket.Handler(makeGame(ready, close)))
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           fmt.Sprintf(":%d", port),
 		Handler:        nil,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	checkError(err)
 	go s.Serve(listener)
 
@@ -276,7 +278,7 @@ func disconnectClient(user *User, ws *websocket.Conn) {
 	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
-	if (user != nil) {
+	if user != nil {
 		masc.UpdateBalance(user.name, -user.bet)
 		log.Println("User ", user.name, " loses his bet of ", user.bet)
 	}

@@ -2,6 +2,7 @@ package masc
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,6 +32,17 @@ func Register(name, password string) error {
 	return err
 }
 
+func Login(name, password string) bool {
+	var expected string
+	row := db.QueryRow("SELECT password FROM Users WHERE name = ?", name)
+	err := row.Scan(&expected)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return expected == password
+}
+
+//TODO: secure against race conditions
 func GetBalance(name string) (int, error) {
 	var balanceStr string
 	row := db.QueryRow(`SELECT balance FROM Users WHERE name = ?`, name)
@@ -61,7 +73,33 @@ func UpdateBalance(name string, balanceDifference int) error {
 	return err
 }
 
-func getDepositAddress(name string) (string, error) {
+// sends amount of satoshis to given address
+//TODO: do proper transaction
+func Withdraw(name string, amount int, address string) error {
+	balance, err := GetBalance(name)
+	if err != nil {
+		return err
+	}
+	if balance < amount {
+		return errors.New("Insufficient funds.")
+	}
+
+	err = UpdateBalance(name, -amount)
+	if err != nil {
+		return err
+	}
+	//TODO: store txhash
+	_, err = bitcoin.SendCoins(address, amount)
+	if err != nil {
+		UpdateBalance(name, amount)
+		return err
+	}
+	return nil
+}
+
+// gets deposit address from database
+// if there is no deposit address yet for the user, create a new one
+func GetDepositAddress(name string) (string, error) {
 	var depositAddress string
 	row := db.QueryRow("SELECT depositAddress FROM Users WHERE name = ?", name)
 	err := row.Scan(&depositAddress)
@@ -82,12 +120,27 @@ func getDepositAddress(name string) (string, error) {
 	return depositAddress, nil
 }
 
-func Login(name, password string) bool {
-	var expected string
-	row := db.QueryRow("SELECT password FROM Users WHERE name = ?", name)
-	err := row.Scan(&expected)
+func GetNameFromDepositAddress(address string) (string, error) {
+	var name string
+	//TODO: index on depositAddress
+	row := db.QueryRow("SELECT name FROM Users WHERE depositAddress = ?", address)
+	err := row.Scan(&name)
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
-	return expected == password
+	return name
+}
+
+// TODO: store transaction id
+func InsertIncomingTransactionsInDb(confirmed chan *bitcoin.RecvTransaction) {
+	for {
+		select {
+		case tx := <-confirmed:
+			name, err := GetNameFromDepositAddress(tx.address)
+			if err != nil {
+				continue
+			}
+			UpdateBalance(name, amount)
+		}
+	}
 }
