@@ -7,8 +7,8 @@ player has to be logged in before he can join a game.
 `{"command" : "register", "name" : ?, "password" : ?}`
 `{"command" : "login", "name" : ?, "password" : ?}`
 returns either
-`{"command" : "register", "success"}`
-`{"command" : "login", "success"}`
+`{"command" : "register", "result" : "success"}`
+`{"command" : "login", "result" : "success"}`
 or `{"error" : errormessage}`
 
 player sends`{"command" : "join"}` if he's ready to start a game
