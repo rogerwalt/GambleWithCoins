@@ -84,11 +84,8 @@ angular.module('myApp').factory('WebSocketFactory', ['$q', '$rootScope', functio
 
     // Define a "getter" for getting customer data
     Service.getCustomers = function() {
-      var request = {
-        command: "register",
-        name: 'Lotte',
-        password: 'Boe'
-      }
+
+      var request = {"command" : "login", "name" : 'foo', "password" : 'bar'}
 
       // Storing in a variable for clarity on what sendRequest returns
       var promise = sendRequest(request);

@@ -33,7 +33,7 @@ type ApiError struct {
 
 func sendError(ws *websocket.Conn, err ApiError) {
 	log.Printf("API Error: Code %i, \"%s\", Command \"%s\"", err.code, err.message, err.command)
-	websocket.Message.Send(ws, []byte(`{"command": "` + err.command + `", "result": { "errorCode": ` + strconv.Itoa(err.code) + `, "errorMsg": "` + err.message + `"}}`))
+	websocket.Message.Send(ws, string([]byte(`{"command": "` + err.command + `", "result": { "errorCode": ` + strconv.Itoa(err.code) + `, "errorMsg": "` + err.message + `"}}`)))
 }
 
 // returns a User if a user has successfully authenticated himself,
@@ -42,6 +42,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 	var msg string
 	var e ApiError
 	err := websocket.Message.Receive(ws, &msg)
+	fmt.Printf("Message: %v", msg)
 	if err != nil {
 		e.message = "Could not receive data from client:" + err.Error()
 		e.code = 98
@@ -49,7 +50,7 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		return nil, &e
 	}
 	log.Printf("Authenticate: Received data from client with RemoteAddr: %v", ws.RemoteAddr())
-
+    log.Printf(msg)
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 

@@ -13,6 +13,18 @@ function AppCtrl($scope) {
         percentage: 0
   }
 
+  var connection = new WebSocket("ws://localhost:8080/play/",'json');
+  connection.onopen = function () {
+    var request = {command: 'register', name: 'Roger', password: 'lotteiscool'};
+    connection.send(JSON.stringify(request)); //send a message to server once connection is opened.
+  };
+  connection.onerror = function (error) {
+    console.log('Error Logged: ' + error); //log errors
+  };
+  connection.onmessage = function (e) {
+    console.log('Received From Server: ' + e.data); //log the received message
+  };
+
   //$scope.customers = WebSocketFactory.getCustomers();
 
   $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
