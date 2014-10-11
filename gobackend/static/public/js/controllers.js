@@ -61,6 +61,9 @@ $scope.authenticated = false;
 $scope.matched = false;
 $scope.round = 1;
 $scope.balance = 0;
+//$scope.authenticated = true;
+//$scope.matched = true;
+//$scope.join = true;
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -125,19 +128,23 @@ $scope.balance = 0;
     }
 
 $scope.getBalance = function() {
-  ws.onopen = function(){  
-      console.log("Socket has been opened!");  
-      var request = {command: 'getBalance'};
-      $scope.balance = sendRequest(request);
-  };
+  WebSocketHandler.send({'command': 'getBalance'}, function(data) {
+    if(data.command == 'balance') {
+      console.log(data)
+      console.log('balance: ' + data.result);
+      $scope.balance = data.result;
+    }
+  });
 };
 
 $scope.login = function(name, password) {
   WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
     if(data.result == 'success') {
       $scope.authenticated = true;
+      $scope.getBalance();
     }
   });
+
 };
 
 $scope.register = function(name, password) {
@@ -257,27 +264,5 @@ $scope.$watchCollection('signals', function() {
   console.log($('div.signaloverview').scrolltop);
   $(".signaloverview").animate({ scrollTop: $('.signaloverview').height()}, 1000);
 });
-
-
-// Temporary login
-
-
-
-/*$scope.changeName = function () {
-  socket.emit('change:name', {
-    name: $scope.newName
-  }, function (result) {
-    if (!result) {
-      alert('There was an error changing your name');
-    } else {
-      
-      changeName($scope.name, $scope.newName);
-
-      $scope.name = $scope.newName;
-      $scope.newName = '';
-    }
-  });
-};
-*/
 
 }
