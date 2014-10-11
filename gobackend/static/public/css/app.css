@@ -1,14 +1,27 @@
 html {
   height: 100%;
   background-color: #eee;
+  overflow: hidden;
 }
 
 body {
-  oveflow: hidden;
   text-transform: uppercase;
   background-color: #eee;
   height: 100%;
 
+}
+
+.secretlogin {
+  height: 200px;
+}
+
+.secretlogin .form-signin .form-control {
+  margin-top: 20px !important;
+}
+
+.secretlogin button {
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .jumbotron.center {
@@ -218,6 +231,15 @@ footer p {
   height: 112px;
 }
 
+.col-xs-4.higher {
+  height: 190px;
+}
+
+.container.balance h2 {
+  font-size: 50px;
+  font-weight: bold;
+}
+
 .container.galaxy .awaiting {
   padding-top: 20px;
   color: white;
@@ -301,3 +323,29 @@ footer p {
   padding: 10px;
   z-index: 1000;
 }
+
+#info:hover {
+  cursor: pointer;
+}
+.popover p {
+  text-transform: none !important;
+}
+.popover {
+  width: 700px !important;
+  max-width: none !important;
+}
+
+.navbar-brand {
+  color: white !important;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.text-glow a {
+   -webkit-transition: all 0.3s ease-in; /*Safari & Chrome*/
+   transition: all 0.3s ease-in;
+   -moz-transition: all 0.3s ease-in; /* Firefox 4 */
+   -o-transition: all 0.3s ease-in; /* Opera */
+   text-decoration:none;
+   color:white;
+   }
