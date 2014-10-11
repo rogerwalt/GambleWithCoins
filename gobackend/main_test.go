@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -18,7 +19,7 @@ func startServer() chan int {
 	// use fresh db
 	os.Remove("./test.db")
 	serverClose := make(chan int)
-	go start("./test.db", 8080, serverClose)
+	go start("./test.db", 8080, serverClose, 0)
 
 	time.Sleep(100 * time.Millisecond)
 	return serverClose
@@ -172,7 +173,8 @@ func loginAndRegister(t *testing.T) {
 	log.Println("Test: ----- loginAndRegister() ended -----")
 }
 
-func game(t *testing.T) {
+func joinGame(name1, pass1 string, balance1 int,
+	name2, pass2 string, balance2 int) (*websocket.Conn, *websocket.Conn) {
 	log.Println("Test: ----- game() procedure -----")
 
 	service := "ws://localhost:8080/play/"
@@ -184,7 +186,8 @@ func game(t *testing.T) {
 
 	log.Println("Test: Loggin in as player 1")
 	// send "join" command as player 1
-	b := []byte(`{"command": "login", "name" : "foo1", "password" : "bar1"}`)
+	b := []byte(fmt.Sprintf(
+		`{"command": "login", "name" : "%s", "password" : "%s"}`, name1, pass1))
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
@@ -211,7 +214,8 @@ func game(t *testing.T) {
 
 	log.Println("Test: Loggin in as player 2")
 	// send "join" command as player 2
-	b = []byte(`{"command": "login", "name" : "foo2", "password" : "bar2"}`)
+	b = []byte(fmt.Sprintf(`{"command": "login", "name" : "%s", "password" : "%s"}`,
+		name2, pass2))
 	err = websocket.Message.Send(conn2, b)
 	checkError(err)
 
@@ -228,6 +232,10 @@ func game(t *testing.T) {
 		log.Println("Test: ERROR: Expected success, got ", msg)
 	}
 	log.Println("Test: Player 2 logged in")
+
+	// add funds
+	masc.UpdateBalance(name1, balance1)
+	masc.UpdateBalance(name2, balance2)
 
 	// send "join" command as player 1
 	log.Println("Test: Joining as player 1")
@@ -254,7 +262,7 @@ func game(t *testing.T) {
 	checkError(err)
 
 	if f["command"] != "matched" {
-		t.Error("Expected matched, got ", msg)
+		log.Println("Expected matched, got ", msg)
 	}
 
 	// interpret message as JSON data
@@ -262,34 +270,62 @@ func game(t *testing.T) {
 	checkError(err)
 
 	if f["command"] != "matched" {
-		t.Error("Expected matched, got ", msg)
+		log.Println("Expected matched, got ", msg)
 	}
 
+	return conn, conn2
+}
+
+func TestGames(t *testing.T) {
+	// do not change order: probabilistic/seed dependent!!
+	game(t)
+
+}
+
+func game(t *testing.T) {
+	//var conn1, conn2 *websocket.Conn
+	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
+	var msg string
+
+	// receive start round as player 1
+	err := websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive start round as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
 	// send "cooperate" command as player 1
-	b = []byte(`{"command": "cooperate"}`)
-	err = websocket.Message.Send(conn, b)
+	b := []byte(`{"command": "action", "action" : "cooperate"}`)
+	err = websocket.Message.Send(conn1, b)
 	checkError(err)
 
+	// receive notification as player 2
+	err = websocket.Message.Receive(conn2, &msg)
+	checkError(err)
+	log.Println(msg)
+
 	// send "defect" command as player 2
-	b = []byte(`{"command": "defect"}`)
+	b = []byte(`{"command": "action", "action": "defect"}`)
 	err = websocket.Message.Send(conn2, b)
 	checkError(err)
 
-	// receive game result as player 1
-	err = websocket.Message.Receive(conn, &msg)
+	// receive notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
 	checkError(err)
-	if msg != "0" {
-		t.Error("Expected 0, got ", msg)
-	}
-	log.Println("Player one gets 0")
+	log.Println(msg)
 
-	// receive game result as player 2
+	// receive game notification as player 1
+	err = websocket.Message.Receive(conn1, &msg)
+	checkError(err)
+	log.Println(msg)
+
+	// receive game notification as player 2
 	err = websocket.Message.Receive(conn2, &msg)
 	checkError(err)
-	if msg != "3" {
-		t.Error("Expected 3, got ", msg)
-	}
-	log.Println("Player one gets 3")
+	log.Println(msg)
 
 	log.Println("Test: ----- game() ended -----")
 }
