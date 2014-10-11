@@ -43,16 +43,22 @@ func Hub(ready chan *websocket.Conn) {
 			if len(waitingClients) > 0 {
 				fmt.Println("Matching clients")
 
-				c2 := waitingClients[len(waitingClients)-1]
+				cWaiting := waitingClients[len(waitingClients)-1]
 				waitingClients = waitingClients[:len(waitingClients)-1]
 
-				err := websocket.Message.Send(c2, "matched")
-				checkError(err)
+				err := websocket.Message.Send(cWaiting, "matched")
+				if err != nil {
+					cWaiting.Close()
+					waitingClients = append(waitingClients, c)
+				}
 
 				err = websocket.Message.Send(c, "matched")
-				checkError(err)
+				if err != nil {
+					c.Close()
+					waitingClients = append(waitingClients, cWaiting)
+				}
 
-				handleGame(c2, c)
+				go handleGame(cWaiting, c)
 
 			} else {
 				fmt.Println("Appending client")
