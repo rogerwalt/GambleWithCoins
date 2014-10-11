@@ -1,6 +1,6 @@
 html {
   height: 100%;
-    background-color: #eee;
+  background-color: #eee;
 }
 
 body {
@@ -15,11 +15,11 @@ body {
   text-transform: uppercase;
 
   background-image: 
-   -webkit-radial-gradient(40% 45%, circle, #98373c, transparent),
-   -webkit-radial-gradient(40% 60%, circle, #503549, transparent);
+  -webkit-radial-gradient(40% 45%, circle, #98373c, transparent),
+  -webkit-radial-gradient(40% 60%, circle, #503549, transparent);
 
-   radial-gradient(40% 45%, circle, #98373c, transparent),
-   radial-gradient(40% 60%, circle, #503549, transparent);
+  radial-gradient(40% 45%, circle, #98373c, transparent),
+  radial-gradient(40% 60%, circle, #503549, transparent);
 
   padding: 0px;
   margin: 0px;
@@ -104,7 +104,6 @@ body {
 .jumbotron.messagefield {
   margin-bottom: 0px;
   font-weight: bold;
-  overflow: hidden;
 }
 
 .jumbotron.messagefield i.fa-bar-chart {
@@ -113,6 +112,11 @@ body {
 
 .jumbotron.messagefield hr {
   border-color: #832228;
+}
+
+.signaloverview {
+  height: 200px;
+  overflow-y: scroll;
 }
 
 footer hr {
@@ -133,18 +137,18 @@ footer p {
 
 .chat-menu {
   font-size: 10px;
-    /* Fallback for web browsers that don't support RGBa */
-    background-color: rgb(255, 255, 255);
-    /* RGBa with 0.6 opacity */
-    background-color: rgba(255, 255, 255, 0.6);
-    padding: 5px;
+  /* Fallback for web browsers that don't support RGBa */
+  background-color: rgb(255, 255, 255);
+  /* RGBa with 0.6 opacity */
+  background-color: rgba(255, 255, 255, 0.6);
+  padding: 5px;
 
 }
 
 .galaxy .chat-menu i {
-    color: #0b131e;
-    margin-left: 10px;
-    margin-right: 10px;
+  color: #0b131e;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .bnt-mainmenu:hover {
@@ -178,37 +182,106 @@ footer p {
   height: 30px;
 }
 .speechbubble {
-   text-align: center;
-   width: 200px;
-   height: 55px;
-   padding: 10px;
-   background: #d4d4d4;
-    color: #832228;
-   font: normal 12px "Segoe UI", Arial, Sans-serif;
-   -moz-border-radius: 10px;
-   -webkit-border-radius: 10px;
-   border-radius: 10px;
+ text-align: center;
+ width: 200px;
+ height: 40px;
+ padding: 5px;
+ background: #d4d4d4;
+ color: #832228;
+ font: normal 12px "Segoe UI", Arial, Sans-serif;
+ -moz-border-radius: 10px;
+ -webkit-border-radius: 10px;
+ border-radius: 10px;
 
-  }
-  .speechbubble:after
-  {
-   content: "";
-   border: solid 10px transparent; /* set all borders to 10 pixels width */
-   border-bottom-color: #d4d4d4; /* the callout */
-   border-top: 0; /* we do not need the bottom border in this case */
-   width: 0;
-   height: 0;
-   overflow: hidden;
-   display: block;
-   position: relative;
-   top: -52px; /* border-width of the :after element + padding of the root element */
-   left: -40%;
-   margin-left: auto;
-   margin-right: auto;
-  }
+}
+.speechbubble:after
+{
+ content: "";
+ border: solid 10px transparent; /* set all borders to 10 pixels width */
+ border-bottom-color: #d4d4d4; /* the callout */
+ border-top: 0; /* we do not need the bottom border in this case */
+ width: 0;
+ height: 0;
+ overflow: hidden;
+ display: block;
+ position: relative;
+ top: -45px; /* border-width of the :after element + padding of the root element */
+ left: -40%;
+ margin-left: auto;
+ margin-right: auto;
+}
 
 .col-xs-4 {
   padding: 0px;
+  display: inline-block;
+  height: 112px;
 }
 
+.container.galaxy .awaiting {
+  padding-top: 20px;
+  color: white;
+  text-align: center;
+}
 
+.container.galaxy .awaiting p {
+  text-align: center;
+}
+
+.round-button {
+  display:inline-block;
+  width: 110px;
+  height: 110px;
+  line-height: 55px;
+  border-radius: 50%;
+  color: #832228;
+  text-align:center;
+  text-decoration:none;
+  background: white;
+  font-size: 25px;
+  opacity: 0.8;
+  border: none;
+  font-weight: bold;
+}
+
+.round-button:hover {
+  cursor: pointer;
+  border: none;
+  opacity: 1;
+}
+
+.round-button:focus {
+  outline: 0;
+}
+
+.round-button:active {
+  border: none;
+}
+
+.fade-ng-enter 
+{
+  -webkit-transition: 1s;
+  transition: 3s;
+  opacity:0;
+}
+.fade-ng-enter-active 
+{
+  opacity:1;
+}
+
+.fade-ng-leave 
+{
+  -webkit-transition: 1s;
+  transition: 2s;
+}
+.fade-ng-leave-active 
+{
+  opacity:0;
+}
+
+.chat-menu i {
+  cursor: pointer;
+}
+
+.chat-menu i:hover {
+  color: #1e2630;
+}

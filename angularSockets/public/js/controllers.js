@@ -9,15 +9,15 @@ function AppCtrl($scope, socket) {
 
   // For the timer
   $scope.roundProgressData = {
-        label: 11,
-        percentage: 0.11
+        label: 0,
+        percentage: 0
       }
 
   $scope.$watch('roundProgressData', function (newValue, oldValue) {
     newValue.percentage = newValue.label / 100;
   }, true);
 
-  $scope.signals = [];
+  $scope.signals = [{player: 'you', signal: 1}, {player:'opposite', signal: 2}];
   $scope.join = false;
 
   console.log($scope.join);
@@ -101,8 +101,17 @@ function AppCtrl($scope, socket) {
       player: 'you',
       signal: signal
     });
+  }
 
-    console.log(signals)
+  $scope.countDown = function(seconds) {
+    $scope.roundProgressData.percentage = 0
+    $scope.roundProgressData.label = seconds
+    for (var i = 1; i <= seconds; i++) {
+      $scope.roundProgressData.percentage += 100.0/seconds ;
+      $scope.roundProgressData.label = seconds - i;
+
+      console.log($scope.roundProgressData)
+    }
   }
   
   /*$scope.changeName = function () {

@@ -3,7 +3,7 @@
 /* Directives */
 
 app.directive('angRoundProgress', [function () {
-    var compilationFunction = function (templateElement, templateAttributes, transclude) {
+  var compilationFunction = function (templateElement, templateAttributes, transclude) {
     if (templateElement.length === 1) {
       var node = templateElement[0];
 
@@ -34,53 +34,68 @@ app.directive('angRoundProgress', [function () {
         pre: function preLink(scope, instanceElement, instanceAttributes, controller) {
           var expression = canvas.getAttribute('data-round-progress-model');
           scope.$watch(expression, function (newValue, oldValue) {
-            // Create the content of the canvas
-            var ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, width, height);
+          // Create the content of the canvas
+          var ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, width, height);
 
-            // The "background" circle
-            var x = width / 2;
-            var y = height / 2;
-            ctx.beginPath();
-            ctx.arc(x, y, parseInt(outerCircleRadius), 0, Math.PI * 2, false);
-            ctx.lineWidth = parseInt(outerCircleWidth);
-            ctx.strokeStyle = outerCircleBackgroundColor;
-            ctx.stroke();
+          // The "background" circle
+          var x = width / 2;
+          var y = height / 2;
+          ctx.beginPath();
+          ctx.arc(x, y, parseInt(outerCircleRadius), 0, Math.PI * 2, false);
+          ctx.lineWidth = parseInt(outerCircleWidth);
+          ctx.strokeStyle = outerCircleBackgroundColor;
+          ctx.stroke();
 
-            // The inner circle
-            ctx.beginPath();
-            ctx.arc(x, y, parseInt(innerCircleRadius), 0, Math.PI * 2, false);
-            ctx.lineWidth = parseInt(innerCircleWidth);
-            ctx.strokeStyle = innerCircleColor;
-            ctx.stroke();
+          // The inner circle
+          ctx.beginPath();
+          ctx.arc(x, y, parseInt(innerCircleRadius), 0, Math.PI * 2, false);
+          ctx.lineWidth = parseInt(innerCircleWidth);
+          ctx.strokeStyle = innerCircleColor;
+          ctx.stroke();
 
-            // The inner number
-            ctx.font = labelFont;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = labelColor;
-            ctx.fillText(newValue.label, x, y);
+          // The inner number
+          ctx.font = labelFont;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = labelColor;
+          ctx.fillText(newValue.label, x, y);
 
-            // The "foreground" circle
-            var startAngle = - (Math.PI / 2);
-            var endAngle = ((Math.PI * 2 ) * newValue.percentage) - (Math.PI / 2);
-            var anticlockwise = false;
-            ctx.beginPath();
-            ctx.arc(x, y, parseInt(outerCircleRadius), startAngle, endAngle, anticlockwise);
-            ctx.lineWidth = parseInt(outerCircleWidth);
-            ctx.strokeStyle = outerCircleForegroundColor;
-            ctx.stroke();
-          }, true);
-        },
-        post: function postLink(scope, instanceElement, instanceAttributes, controller) {}
-      };
-    }
-  };
+          // The "foreground" circle
+          var startAngle = - (Math.PI / 2);
+          var endAngle = ((Math.PI * 2 ) * newValue.percentage) - (Math.PI / 2);
+          var anticlockwise = false;
+          ctx.beginPath();
+          ctx.arc(x, y, parseInt(outerCircleRadius), startAngle, endAngle, anticlockwise);
+          ctx.lineWidth = parseInt(outerCircleWidth);
+          ctx.strokeStyle = outerCircleForegroundColor;
+          ctx.stroke();
+        }, true);
+},
+post: function postLink(scope, instanceElement, instanceAttributes, controller) {}
+};
+}
+};
 
-  var roundProgress = {
-    compile: compilationFunction,
-    replace: true
-  };
-  return roundProgress;
+var roundProgressData = {label: 0, percentage: 0}
+var roundProgress = {
+  compile: compilationFunction,
+  replace: true,
+  scope: {
+    roundProgressData: '&'
+  },
+}
+
+return roundProgress;
 
 }]);
+
+app.directive('messaging', [function () {
+return {
+  replace: true,
+  scope: {
+    signals: '&'
+  }
+}
+}]);
+

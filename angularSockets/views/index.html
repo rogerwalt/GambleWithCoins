@@ -37,7 +37,7 @@
   <script src="/js/controllers.js"></script>
   <script src="/js/filters.js"></script>
   <script src="/js/directives.js"></script>
-
+  <script src="/js/scrollglue.js"></script>
 
 
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -90,17 +90,20 @@
   		<!-- Example row of columns -->
   		<div class="row">
   			<div class="col-md-4 col-xs-4">
-  			    <span class="fa-stack fa-4x transparant">
+  			    <span ng-show="matched" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
   					<i class="fa fa-check-circle fa-stack-1x" ng-click="sendAction('defect')"></i>
   				</span>
   			</div>
 
   			<div class="col-md-4 col-xs-4">
- 				  <button class="btn" ng-show="!join" ng-click="joinGame()">Join</button>
-          <div ng-show="!matched && join == true">Wait for the other player...</div>
+ 				  <button class="round-button" ng-show="!join" ng-click="joinGame()">JOIN</button>
+          <div class="awaiting" ng-show="!matched && join == true">
+                    <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
+          <p>Selecting an opponent...</p>
+</div>
 
-  				<div ng-show="matched && join" ang:round:progress
+  				<div ng-show="matched && join" ang:round:progress ng-model="roundProgresData.label"
           data-round-progress-model="roundProgressData"
   				data-round-progress-width="85"
   				data-round-progress-height="100"
@@ -113,12 +116,9 @@
   				data-round-progress-label-color="#fff"></div>
 
   				<!-- <input type="number" ng-model="roundProgressData.label"/> -->
-
-          <button class="btn" ng-click="matched = true">Match!</button>
   			</div>
   			<div class="col-md-4 col-xs-4">
-
-  				<span class="fa-stack fa-4x transparant">
+  				<span ng-show="matched" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
   					<i class="fa fa-times-circle fa-stack-1x" ng-click="sendAction('coorperate')"></i>
   				</span>
@@ -129,10 +129,10 @@
  		<p>Chat with your opponent...</p>
  		</div>
   		 <div class="row chat-menu">
-  					<i class="fa fa-times-circle fa-4x"></i>
-  					<i class="fa fa-check-circle fa-4x"></i>
-  					<i class="fa fa-smile-o fa-4x"></i>
-  					 <i class="fa fa-frown-o fa-4x"></i>
+  					<i ng-click="sendSignal(1)" class="fa fa-times-circle fa-4x"></i>
+  					<i ng-click="sendSignal(2)" class="fa fa-check-circle fa-4x"></i>
+  					<i ng-click="sendSignal(3)" class="fa fa-smile-o fa-4x"></i>
+  					<i ng-click="sendSignal(4)" class="fa fa-frown-o fa-4x"></i>
   				</span>
   		</div>
   	</div>
@@ -140,24 +140,19 @@
   	</div>
 
   	<div class="jumbotron messagefield">
+                <!--  <button class="btn" ng-click="matched = true">Match!</button> -->
+                <!-- <button class="btn" ng-click="countDown(10)">Countdoun</button> -->
+
   		<div class="container">
   		 	<div class="col-xs-6 col-md-4 pull-left text-left">You </div>
   		 	<div class="col-xs-6 col-md-4 pull-right text-right">Opponent<i class="fa fa-bar-chart lg"></i></div>
   		</div>
-  		<div class="container">
   		  		 	<hr>
 
-  		 	<div class="row message text-left">
+        <div scroll-glue="glued" class="container signaloverview">
+  		 	<div ng-repeat="signal in signals" class="row message {{ signal.player == 'you' ? 'text-left' : 'text-right'}}">
   		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
-  		 	</div>
-
-  		 	 <div class="row message text-right">
-  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
-  		 	</div>
-
-  		 	  		 	<div class="row message text-left">
-  		 	<div class="speechbubble"> <i class="fa fa-check-circle fa-3x"></i></div>
-  		 	</div>
+        </div>
 
   		</div>
   	</div>
@@ -171,9 +166,3 @@
   				</div>
   			</footer>
   </html>
-
-  <script>
-  		$(window).resize(function(){
-			$('.messagefield').height(($(window).height() - $('.upperpart').height() - $('footer').height() - 20 + "px"));
-		});
-</script>
