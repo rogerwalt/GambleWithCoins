@@ -63,6 +63,7 @@ func UpdateBalance(name string, balanceDifference int) error {
 	return err
 }
 
+// sends amount of satoshis to given address
 //TODO: do proper transaction
 func Withdraw(name string, amount int, address string) error {
 	balance, err := GetBalance(name)
@@ -86,7 +87,9 @@ func Withdraw(name string, amount int, address string) error {
 	return nil
 }
 
-func getDepositAddress(name string) (string, error) {
+// gets deposit address from database
+// if there is no deposit address yet for the user, create a new one
+func GetDepositAddress(name string) (string, error) {
 	var depositAddress string
 	row := db.QueryRow("SELECT depositAddress FROM Users WHERE name = ?", name)
 	err := row.Scan(&depositAddress)
