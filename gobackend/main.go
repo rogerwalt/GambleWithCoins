@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -26,19 +25,28 @@ type User struct {
 	conn *websocket.Conn
 }
 
-func sendError(ws *websocket.Conn, err error) {
-	log.Println("Sending error: ", err.Error())
-	toSend, _ := json.Marshal(map[string]string{"error": err.Error()})
-	websocket.Message.Send(ws, toSend)
+type ApiError struct {
+	message string 		// api error message
+	code int 			// api error code
+	command string		// which api command was executed while the error happened
+}
+
+func sendError(ws *websocket.Conn, err ApiError) {
+	log.Printf("API Error: Code %i, \"%s\", Command \"%s\"", err.code, err.message, err.command)
+	websocket.Message.Send(ws, []byte(`{"command": "` + err.command + `", "result": { "errorCode": ` + strconv.Itoa(err.code) + `, "errorMsg": "` + err.message + `"}}`))
 }
 
 // returns a User if a user has successfully authenticated himself,
 // otherwise returns an error
-func authenticate(ws *websocket.Conn) (*User, error) {
+func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 	var msg string
+	var e ApiError
 	err := websocket.Message.Receive(ws, &msg)
 	if err != nil {
-		return nil, err
+		e.message = "Could not receive data from client:" + err.Error()
+		e.code = 98
+		e.command = "_undefined"
+		return nil, &e
 	}
 
 	var m map[string]interface{}
@@ -58,45 +66,66 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				b := []byte(`{"command": "login", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
-					return nil, err
+					e.message = "Could not send back data to client:" + err.Error()
+					e.code = 99
+					e.command = "login"
+					return nil, &e
 				}
 				return &User{m["name"].(string), 0, ws}, nil
 			} else {
-				return nil, errors.New("Wrong password")
+				e.message = "Wrong username or password."
+				e.code = 1
+				e.command = "login"
+				return nil, &e
 			}
 		} else if m["command"].(string) == "register" {
 			err := masc.Register(m["name"].(string), m["password"].(string))
 			if err != nil {
-				return nil, err
+				e.message = "Could not register new user:" + err.Error()
+				e.code = 999
+				e.command = "register"
+				return nil, &e
 			} else {
 				log.Println("Client registered")
 				b := []byte(`{"command": "register", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
-					return nil, err
+					e.message = "Could not send back data to client:" + err.Error()
+					e.code = 99
+					e.command = "login"
+					return nil, &e
 				}
 				return &User{m["name"].(string), 0, ws}, nil
 			}
 		}
 	}
 	disconnectClient(nil, ws)
-	return nil, errors.New("Too many unsuccessful logins")
+	e.message = "Too many unsuccessful logins."
+	e.code = 2
+	if m["command"].(string) == "login" {
+		e.command = "login"
+	} else if m["command"].(string) == "register" {
+		e.command = "register"
+	} else {
+		e.command = "_undefined"
+	}
+	return nil, &e
 }
 
 func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 	return func(ws *websocket.Conn) {
 		log.Println("Client connected")
 
-		user, err := authenticate(ws)
-		if err != nil {
-			sendError(ws, err)
+		user, e := authenticate(ws)
+		if e != nil {
+			sendError(ws, *e)
 			ws.Close()
 			return
 		}
 
 		for {
 			var msg string
-			err = websocket.Message.Receive(ws, &msg)
+			err := websocket.Message.Receive(ws, &msg)
 			checkError(err)
 
 			// interpret message as json data
@@ -301,7 +330,7 @@ func checkError(err error) {
 
 func disconnectClient(user *User, ws *websocket.Conn) {
 	log.Println("Disconnecting client due to invalid requests.")
-	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
+	toSend, _ := json.Marshal(map[string]string{"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": strconv.Itoa(10)})
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
 	if user != nil {
