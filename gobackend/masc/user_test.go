@@ -17,7 +17,7 @@ func TestUser(t *testing.T) {
 	//checkError(err)
 	defer db.Close()
 
-	setup(db)
+	SetupDb(db)
 
 	register("bla", "baz")
 	if !login("bla", "baz") {

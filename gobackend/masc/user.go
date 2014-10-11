@@ -10,28 +10,22 @@ import (
 var db *sql.DB
 
 // call before using any function in this file
-func setup(adb *sql.DB) {
+func SetupDb(adb *sql.DB) error {
 	db = adb
-}
-
-func register(name, password string) {
-	result, err := db.Exec(`CREATE TABLE Users(
+	_, err := db.Exec(`CREATE TABLE Users(
 							id INTEGER PRIMARY KEY AUTOINCREMENT,
 							name TEXT UNIQUE,
 							password TEXT,
 							balance INTEGER,
 							depositAddress TEXT);`)
-	if err != nil {
-		fmt.Println(err)
-	}
+	return err
+}
 
-	result, err = db.Exec(`INSERT INTO Users 
+func register(name, password string) error {
+	_, err := db.Exec(`INSERT INTO Users 
 							(name, password, balance) 
 							VALUES (?, ?, 0);`, name, password)
-	fmt.Println(result)
-	if err != nil {
-		fmt.Println(err)
-	}
+	return err
 }
 
 func getAddress() {

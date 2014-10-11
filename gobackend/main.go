@@ -2,13 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"encoding/json"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -17,12 +18,9 @@ import (
 	"code.google.com/p/go.net/websocket"
 )
 
-// global database connection
-var db *sql.DB
-
 func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn) {
 	return func(ws *websocket.Conn) {
-		fmt.Println("Client connected")
+		log.Println("Client connected")
 		var msg string
 		err := websocket.Message.Receive(ws, &msg)
 		checkError(err)
@@ -31,13 +29,18 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
 		var f interface{}
 		err = json.Unmarshal([]byte(msg), &f)
-		checkError(err)
+		// remove client if sends invalid data
+		if err != nil {
+			log.Println("Remove client due to invalid requests.")
+			ws.Close()
+			return
+		}
 
-		fmt.Printf("json received: %v", f)
+		log.Printf("json received: %v", f)
 
 		msg = strings.Trim(msg, "\"")
 		if msg == "join" {
-			fmt.Println("Client wants to join")
+			log.Println("Client wants to join")
 			ready <- ws
 		}
 		<-close
@@ -51,7 +54,7 @@ func Hub(ready chan *websocket.Conn) {
 		select {
 		case c := <-ready:
 			if len(waitingClients) > 0 {
-				fmt.Println("Matching clients")
+				log.Println("Matching clients")
 
 				cWaiting := waitingClients[len(waitingClients)-1]
 				waitingClients = waitingClients[:len(waitingClients)-1]
@@ -71,7 +74,7 @@ func Hub(ready chan *websocket.Conn) {
 				go handleGame(cWaiting, c)
 
 			} else {
-				fmt.Println("Appending client")
+				log.Println("Appending client")
 				waitingClients = append(waitingClients, c)
 			}
 		}
@@ -85,7 +88,7 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 	err = websocket.Message.Receive(conn2, &action2)
 	checkError(err)
 
-	fmt.Println("Received actions:")
+	log.Println("Received actions:")
 	fmt.Printf("%v", action1)
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
 	err = websocket.Message.Send(conn1, strconv.Itoa(p1))
@@ -93,7 +96,7 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 
 	err = websocket.Message.Send(conn2, strconv.Itoa(p2))
 	checkError(err)
-	fmt.Println("Sent payoffs")
+	log.Println("Sent payoffs")
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +109,7 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	db, err := sql.Open("sqlite3", "./masc.db")
 	checkError(err)
+	masc.SetupDb(db)
 	defer db.Close()
 
 	ready := make(chan *websocket.Conn)
@@ -125,7 +129,7 @@ func main() {
 
 func checkError(err error) {
 	if err != nil {
-		fmt.Println("Fatal error ", err.Error())
+		log.Println("Fatal error ", err.Error())
 		os.Exit(1)
 	}
 }
