@@ -36,6 +36,7 @@ var WebSocketHandler = {
   }
 };
 
+
 /* Controllers */
 
 function AppCtrl($scope, $q, $rootScope) {
@@ -137,9 +138,9 @@ $scope.getBalance = function() {
 };
 
 $scope.login = function(name, password) {
-  console.log("Logging in as ")
-      var request = {command: 'login', name: name, password: password};
-      $scope.balance = sendRequest(request);
+  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data)) {
+    console.log(data);
+  }
 };
 
 $scope.register = function(name, password) {
