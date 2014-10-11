@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"testing"
 	"encoding/json"
 	"code.google.com/p/go.net/websocket"
@@ -10,60 +9,68 @@ import (
 func TestGame(t *testing.T) {
 	service := "ws://localhost:8080/play/"
 
-	// open first connection (player 1)
+	// open connection as player 1
 	conn, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
-	// send join command from player 1
+	// send "join" command as player 1
 	b := []byte(`{"command": "join"}`)
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
-	// open second connection (player 2)
+	// open connection as player 2
 	conn2, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
-	// send join command from player 2
+	// send "join" command as player 2
 	b = []byte(`{"command": "join"}`)
 	err = websocket.Message.Send(conn2, b)
 	checkError(err)
 
-	// receive message from server
+	// receive "matched" message from server as player 2
 	var msg string
 	err = websocket.Message.Receive(conn2, &msg)
 	checkError(err)
 
 	// interpret message as JSON data
-	var f interface{}
+	var f map[string]interface{}
 	err = json.Unmarshal([]byte(msg), &f)
 	checkError(err)
 
-	log.Printf("%v", f)
-
-	if msg != "matched" {
+	if f["command"] != "matched" {
 		t.Error("Expected matched, got ", msg)
 	}
 
+	// receive "matched" message from server as player 1
 	err = websocket.Message.Receive(conn, &msg)
 	checkError(err)
-	if msg != "matched" {
+
+	// interpret message as JSON data
+	err = json.Unmarshal([]byte(msg), &f)
+	checkError(err)
+
+	if f["command"] != "matched" {
 		t.Error("Expected matched, got ", msg)
 	}
 
-	msg = "C"
-	err = websocket.Message.Send(conn, msg)
+	// send "cooperate" command as player 1
+	b = []byte(`{"command": "cooperate"}`)
+	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
-	msg = "D"
-	err = websocket.Message.Send(conn2, msg)
+	// send "defect" command as player 2
+	b = []byte(`{"command": "defect"}`)
+	err = websocket.Message.Send(conn2, b)
 	checkError(err)
 
+	// receive game result as player 1
 	err = websocket.Message.Receive(conn, &msg)
 	checkError(err)
 	if msg != "0" {
 		t.Error("Expected 0, got ", msg)
 	}
 
+	// receive game result as player 2
 	err = websocket.Message.Receive(conn2, &msg)
 	checkError(err)
 	if msg != "3" {

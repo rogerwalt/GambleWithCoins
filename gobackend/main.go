@@ -28,8 +28,11 @@ func makeGame(ready chan *websocket.Conn, close chan bool) func(*websocket.Conn)
 		// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
 		var f map[string]interface{}
 		err = json.Unmarshal([]byte(msg), &f)
+
+		_, commandExists := f["command"]
+
 		// remove client if sends invalid data
-		if err != nil {
+		if err != nil || !commandExists {
 			log.Println("Remove client due to invalid requests.")
 			ws.Close()
 			return
@@ -56,13 +59,13 @@ func Hub(ready chan *websocket.Conn) {
 				cWaiting := waitingClients[len(waitingClients)-1]
 				waitingClients = waitingClients[:len(waitingClients)-1]
 
-				err := websocket.Message.Send(cWaiting, "matched")
+				err := websocket.Message.Send(cWaiting, []byte(`{"command": "matched"}`))
 				if err != nil {
 					cWaiting.Close()
 					waitingClients = append(waitingClients, c)
 				}
 
-				err = websocket.Message.Send(c, "matched")
+				err = websocket.Message.Send(c, []byte(`{"command": "matched"}`))
 				if err != nil {
 					c.Close()
 					waitingClients = append(waitingClients, cWaiting)
@@ -82,11 +85,56 @@ func handleGame(conn1, conn2 *websocket.Conn) {
 	var action1, action2 string
 	err := websocket.Message.Receive(conn1, &action1)
 	checkError(err)
+
+	// interpret message as json data
+	// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
+	var f map[string]interface{}
+	err = json.Unmarshal([]byte(action1), &f)
+
+	_, commandExists := f["command"]
+
+	// remove client if sends invalid data
+	if err != nil || !commandExists {
+		log.Println("Remove client due to invalid requests.")
+		conn1.Close()
+		return
+	}
+
+	// try to convert action1 to string
+	if str, ok := f["command"].(string); ok {
+	    action1 = str
+	} else {
+	    log.Println("Remove client due to invalid requests.")
+		conn1.Close()
+		return
+	}
+
 	err = websocket.Message.Receive(conn2, &action2)
 	checkError(err)
 
+	// interpret message as json data
+	// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
+	err = json.Unmarshal([]byte(action2), &f)
+
+	_, commandExists = f["command"]
+
+	// remove client if sends invalid data
+	if err != nil || !commandExists {
+		log.Println("Remove client due to invalid requests.")
+		conn2.Close()
+		return
+	}
+
+	// try to convert action2 to string
+	if str, ok := f["command"].(string); ok {
+	    action2 = str
+	} else {
+	    log.Println("Remove client due to invalid requests.")
+		conn1.Close()
+		return
+	}
+
 	log.Println("Received actions:")
-	fmt.Printf("%v", action1)
 	p1, p2 := masc.PrisonersDilemma(action1, action2)
 	err = websocket.Message.Send(conn1, strconv.Itoa(p1))
 	checkError(err)
