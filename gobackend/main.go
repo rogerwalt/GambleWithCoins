@@ -26,6 +26,7 @@ type User struct {
 }
 
 func sendError(ws *websocket.Conn, err error) {
+	log.Println("Sending error: ", err.Error())
 	toSend, _ := json.Marshal(map[string]string{"error": err.Error()})
 	websocket.Message.Send(ws, toSend)
 }
@@ -42,10 +43,18 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
 
+/*
+	fmt.Printf("Map: %v", m)
+	fmt.Printf("Name: %v", m["name"])
+	fmt.Printf("Password: %v", m["password"])
+	fmt.Println("___________________________")
+*/
+
 	for i := 0; i < 3; i++ {
-		if m["command"].(string) == "join" {
+		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
-				b := []byte(`{"command": "register", "result" : "success"}`)
+				log.Println("Client tries to log in")
+				b := []byte(`{"command": "login", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
 					return nil, err
@@ -59,6 +68,7 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 			if err != nil {
 				return nil, err
 			} else {
+				log.Println("Client registered")
 				b := []byte(`{"command": "register", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
@@ -219,6 +229,8 @@ func main() {
 }
 
 func start(dbName string, serverClose chan int) {
+	log.Println("Starting server")
+
 	db, err := sql.Open("sqlite3", dbName)
 	checkError(err)
 	masc.SetupDb(db)

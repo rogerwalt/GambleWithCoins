@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"encoding/json"
 	"os"
 	"testing"
@@ -11,6 +12,7 @@ import (
 
 // TODO: shutting down the server gracefully does not yet work
 func startServer() chan int {
+
 	time.Sleep(100 * time.Millisecond)
 	// use fresh db
 	os.Remove("./test.db")
@@ -22,21 +24,25 @@ func startServer() chan int {
 }
 
 func TestGame(t *testing.T) {
+	log.Println("Test: Starting server")
 	serverClose := startServer()
 
-	login(t)
+	loginAndRegister(t)
 	game(t)
 
 	serverClose <- 1
 }
 
-func login(t *testing.T) {
+func loginAndRegister(t *testing.T) {
+	log.Println("Test: ----- loginAndRegister() procedure----- ")
 	service := "ws://localhost:8080/play/"
 
 	// open connection as player 1
+	log.Println("Test: Connecting as player 1")
 	conn, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
+	log.Println("Test: Registering as player 1")
 	// send "join" command as player 1
 	b := []byte(`{"command": "register", "name" : "foo", "password" : "bar"}`)
 	err = websocket.Message.Send(conn, b)
@@ -49,32 +55,38 @@ func login(t *testing.T) {
 	var f map[string]interface{}
 	err = json.Unmarshal([]byte(msg), &f)
 	checkError(err)
-	if f["command"] != "login" {
-		t.Error("Expected login, got ", msg)
+	if f["command"] != "register" {
+		log.Println("Test: ERROR: Expected register, got", msg)
 	}
 	if f["result"] != "success" {
-		t.Error("Expected success, got ", msg)
+		log.Println("Test: ERROR: Expected success, got ", msg)
 	}
-
+	log.Println("Test: ----- loginAndRegister() ended -----")
 }
 
 func game(t *testing.T) {
+	log.Println("Test: ----- game() procedure -----")
+
 	service := "ws://localhost:8080/play/"
 
 	// open connection as player 1
+	log.Println("Test: Connecting as player 1")
 	conn, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
 	// send "join" command as player 1
+	log.Println("Test: Joining as player 1")
 	b := []byte(`{"command": "join"}`)
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
 	// open connection as player 2
+	log.Println("Test: Connecting as player 2")
 	conn2, err := websocket.Dial(service, "", "http://localhost")
 	checkError(err)
 
 	// send "join" command as player 2
+	log.Println("Test: Joining as player 2")
 	b = []byte(`{"command": "join"}`)
 	err = websocket.Message.Send(conn2, b)
 	checkError(err)
@@ -128,4 +140,6 @@ func game(t *testing.T) {
 	if msg != "3" {
 		t.Error("Expected 3, got ", msg)
 	}
+
+	log.Println("Test: ----- game() ended -----")
 }
