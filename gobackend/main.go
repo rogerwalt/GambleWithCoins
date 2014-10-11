@@ -136,6 +136,10 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			var msg string
 			err := websocket.Message.Receive(ws, &msg)
 			if err != nil {
+				// if it is just a receive timeout just continue with the loop
+				if e, ok := err.(*net.OpError); ok && !e.Temporary() {
+					checkError(err)
+				}
 				continue
 			}
 
