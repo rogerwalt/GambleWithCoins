@@ -21,14 +21,16 @@ func SetupDb(adb *sql.DB) error {
 							name TEXT UNIQUE,
 							password TEXT,
 							balance INTEGER,
-							depositAddress TEXT);`)
+							depositAddress TEXT,
+							cooperate INTEGER,
+							defect INTEGER);`)
 	return err
 }
 
 func Register(name, password string) error {
 	_, err := db.Exec(`INSERT INTO Users 
-							(name, password, balance, depositAddress) 
-							VALUES (?, ?, 0, "NULL");`, name, password)
+							(name, password, balance, depositAddress, cooperate, defect) 
+							VALUES (?, ?, 0, "NULL", 0, 0);`, name, password)
 	return err
 }
 
@@ -40,6 +42,22 @@ func Login(name, password string) bool {
 		fmt.Println(err)
 	}
 	return expected == password
+}
+
+func AddAction(name, action string) bool {
+	var err error
+	if action == "cooperate" {
+		_, err = db.Exec("UPDATE Users SET cooperate = cooperate + 1 WHERE name = ?", name)
+	} else if action == "defect" {
+		_, err = db.Exec("UPDATE Users SET defect = defect + 1 WHERE name = ?", name)
+	} else {
+		fmt.Println("Action does not exist")
+	}
+	
+	if err != nil {
+		fmt.Println(err)
+	}
+	return true
 }
 
 //TODO: secure against race conditions
