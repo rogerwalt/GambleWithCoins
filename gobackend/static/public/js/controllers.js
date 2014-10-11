@@ -2,7 +2,7 @@
 
 /* Controllers */
 
-function AppCtrl($scope, socket) {
+function AppCtrl($scope) {
 
   // Socket listeners
   // ================
@@ -11,7 +11,9 @@ function AppCtrl($scope, socket) {
   $scope.roundProgressData = {
         label: 0,
         percentage: 0
-      }
+  }
+
+  //$scope.customers = WebSocketFactory.getCustomers();
 
   $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
 
@@ -25,6 +27,7 @@ function AppCtrl($scope, socket) {
   console.log($scope.join);
   console.log($scope.matched);
 
+  /*
   socket.on('')
 
   // Initiate the game (set balance for user)
@@ -115,7 +118,8 @@ function AppCtrl($scope, socket) {
       console.log($scope.roundProgressData)
     }
   }
-
+  
+  */
 
   $scope.$watchCollection('signals', function() {
     console.log($('div.signaloverview').scrolltop);
