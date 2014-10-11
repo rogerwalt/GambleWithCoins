@@ -3,6 +3,9 @@
 ## The game
 
 ### Players -> Server
+player has to be logged in before he can join a game.
+`{"command" : "register", "name" : ?, "password" : ?}`
+`{"command" : "login", "name" : ?, "password" : ?}`
 
 player sends`{"command" : "join"}` if he's ready to start a game
 server replies `{"command" : "matched"}` as soon as the game is ready to begin
