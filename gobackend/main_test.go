@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"code.google.com/p/go.net/websocket"
-
 	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
+
+	"github.com/gorilla/websocket"
 )
 
 // TODO: shutting down the server gracefully does not yet work
@@ -33,9 +33,9 @@ func TestGame(t *testing.T) {
 	loginAndRegister(t)
 	testDatabase(t)
 	game(t)
-	gameB(t)
-	gameC(t)
-	gameSlow(t)
+	/* gameB(t)*/
+	//gameC(t)
+	/*gameSlow(t)*/
 
 	serverClose <- 1
 }
@@ -97,21 +97,23 @@ func loginAndRegister(t *testing.T) {
 	log.Println("Test: ----- loginAndRegister() procedure----- ")
 	service := "ws://localhost:8080/play/"
 
+	var DefaultDialer *websocket.Dialer
 	// open connection as player 1
 	log.Println("Test: Connecting as player 1")
-	conn, err := websocket.Dial(service, "", "http://localhost")
+
+	conn, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
 	log.Println("Test: Registering as player 1")
 	// send "join" command as player 1
 	b := []byte(`{"command": "register", "name" : "foo1", "password" : "bar1"}`)
-	err = websocket.Message.Send(conn, b)
+	err = conn.WriteMessage(websocket.TextMessage, b)
 	// fatal error?
 	checkError(err)
 
 	// receive answer from registration
-	var msg string
-	err = websocket.Message.Receive(conn, &msg)
+	messageType, msg, err := conn.ReadMessage()
+	//err = conn.WriteMessage(websocket.TextMessage, b)
 	checkError(err)
 
 	var f map[string]interface{}
@@ -126,18 +128,18 @@ func loginAndRegister(t *testing.T) {
 
 	// open connection as player 1
 	log.Println("Test: Open second Connection")
-	conn2, err := websocket.Dial(service, "", "http://localhost")
+	conn2, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
 	log.Println("Test: Login as player 1")
 	// send "join" command as player 1
 	b = []byte(`{"command": "login", "name" : "foo1", "password" : "bar1"}`)
-	err = websocket.Message.Send(conn2, b)
+	err = conn2.WriteMessage(messageType, b)
 	// fatal error?
 	checkError(err)
 
 	// receive answer from registration
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
 
 	err = json.Unmarshal([]byte(msg), &f)
@@ -151,18 +153,18 @@ func loginAndRegister(t *testing.T) {
 
 	// open connection as player 2
 	log.Println("Test: Open third Connection")
-	conn3, err := websocket.Dial(service, "", "http://localhost")
+	conn3, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
 	log.Println("Test: Registering as player 2")
 	// send "join" command as player 1
 	b = []byte(`{"command": "register", "name" : "foo2", "password" : "bar2"}`)
-	err = websocket.Message.Send(conn3, b)
+	err = conn3.WriteMessage(messageType, b)
 	// fatal error?
 	checkError(err)
 
 	// receive answer from registration
-	err = websocket.Message.Receive(conn3, &msg)
+	messageType, msg, err = conn3.ReadMessage()
 	checkError(err)
 
 	err = json.Unmarshal([]byte(msg), &f)
@@ -185,19 +187,19 @@ func joinGame(name1, pass1 string, balance1 int,
 
 	// open connection as player 1
 	log.Println("Test: Connecting as player 1")
-	conn, err := websocket.Dial(service, "", "http://localhost")
+	var DefaultDialer *websocket.Dialer
+	conn, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
 	log.Println("Test: Loggin in as player 1")
 	// send "join" command as player 1
 	b := []byte(fmt.Sprintf(
 		`{"command": "login", "name" : "%s", "password" : "%s"}`, name1, pass1))
-	err = websocket.Message.Send(conn, b)
+	err = conn.WriteMessage(websocket.TextMessage, b)
 	checkError(err)
 
 	// receive answer from registration
-	var msg string
-	err = websocket.Message.Receive(conn, &msg)
+	messageType, msg, err := conn.ReadMessage()
 	checkError(err)
 
 	var f map[string]interface{}
@@ -213,18 +215,18 @@ func joinGame(name1, pass1 string, balance1 int,
 
 	// open connection as player 2
 	log.Println("Test: Connecting as player 2")
-	conn2, err := websocket.Dial(service, "", "http://localhost")
+	conn2, _, err := DefaultDialer.Dial(service, nil)
 	checkError(err)
 
 	log.Println("Test: Loggin in as player 2")
 	// send "join" command as player 2
 	b = []byte(fmt.Sprintf(`{"command": "login", "name" : "%s", "password" : "%s"}`,
 		name2, pass2))
-	err = websocket.Message.Send(conn2, b)
+	err = conn2.WriteMessage(messageType, b)
 	checkError(err)
 
 	// receive answer from registration
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
 
 	err = json.Unmarshal([]byte(msg), &f)
@@ -244,21 +246,21 @@ func joinGame(name1, pass1 string, balance1 int,
 	// send "join" command as player 1
 	log.Println("Test: Joining as player 1")
 	b = []byte(`{"command": "join"}`)
-	err = websocket.Message.Send(conn, b)
+	err = conn.WriteMessage(messageType, b)
 	checkError(err)
 
 	// send "join" command as player 2
 	log.Println("Test: Joining as player 2")
 	b = []byte(`{"command": "join"}`)
-	err = websocket.Message.Send(conn2, b)
+	err = conn2.WriteMessage(messageType, b)
 	checkError(err)
 
 	// receive "matched" message from server as player 1
-	err = websocket.Message.Receive(conn, &msg)
+	messageType, msg, err = conn.ReadMessage()
 	checkError(err)
 
 	// receive "matched" message from server as player 2
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
 
 	// interpret message as JSON data
@@ -283,170 +285,96 @@ func joinGame(name1, pass1 string, balance1 int,
 func game(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
 	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
-	var msg string
 
-	// receive start round as player 1
-	err := websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
+	for i := 0; i < 2; i++ {
+		// receive start round as player 1
+		messageType, msg, err := conn1.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
 
-	// receive start round as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
+		// receive start round as player 2
+		messageType, msg, err = conn2.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
 
-	// send "cooperate" command as player 1
-	b := []byte(`{"command": "action", "action" : "cooperate"}`)
-	err = websocket.Message.Send(conn1, b)
-	checkError(err)
+		// send "cooperate" command as player 1
+		b := []byte(`{"command": "action", "action" : "cooperate"}`)
+		err = conn1.WriteMessage(messageType, b)
+		checkError(err)
 
-	// receive notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
+		// receive notification as player 2
+		messageType, msg, err = conn2.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
 
-	// send "defect" command as player 2
-	b = []byte(`{"command": "action", "action": "defect"}`)
-	err = websocket.Message.Send(conn2, b)
-	checkError(err)
+		// send "defect" command as player 2
+		b = []byte(`{"command": "action", "action": "defect"}`)
+		err = conn2.WriteMessage(messageType, b)
+		checkError(err)
 
-	// receive notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
+		// receive notification as player 1
+		messageType, msg, err = conn1.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
 
-	// receive game notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
+		// receive game notification as player 1
+		messageType, msg, err = conn1.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
 
-	// receive game notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	log.Println("Test: ----- game() ended -----")
-}
-
-func gameB(t *testing.T) {
-	//var conn1, conn2 *websocket.Conn
-	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
-	var msg string
-
-	// receive start round as player 1
-	err := websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive start round as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// send "cooperate" command as player 1
-	b := []byte(`{"command": "action", "action" : "cooperate"}`)
-	err = websocket.Message.Send(conn1, b)
-	checkError(err)
-
-	// receive notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// send "cooperate" command as player 2
-	b = []byte(`{"command": "action", "action": "cooperate"}`)
-	err = websocket.Message.Send(conn2, b)
-	checkError(err)
-
-	// receive notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive game notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive game notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive game notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive game notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
+		// receive game notification as player 2
+		messageType, msg, err = conn2.ReadMessage()
+		checkError(err)
+		log.Println(string(msg))
+	}
 
 	log.Println("Test: ----- game() ended -----")
-}
-
-func gameC(t *testing.T) {
-	//var conn1, conn2 *websocket.Conn
-	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
-	var msg string
-
-	// receive start round as player 1
-	err := websocket.Message.Receive(conn1, &msg)
-	checkError(err)
-	log.Println(msg)
-
-	// receive start round as player 2
-	err = websocket.Message.Receive(conn2, &msg)
-	checkError(err)
-	log.Println(msg)
 }
 
 func gameSlow(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
-	conn1, conn2 := joinGame("foo1", "bar1", 0, "foo2", "bar2", 0)
-	var msg string
+	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
 
 	// receive start round as player 1
-	err := websocket.Message.Receive(conn1, &msg)
+	messageType, msg, err := conn1.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
 	// receive start round as player 2
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
 	// send "cooperate" command as player 1
 	b := []byte(`{"command": "action", "action" : "cooperate"}`)
-	err = websocket.Message.Send(conn1, b)
+	err = conn1.WriteMessage(messageType, b)
 	checkError(err)
 
 	// receive notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
-	time.Sleep(8 * time.Second)
-	// send "cooperate" command as player 2
-	b = []byte(`{"command": "action", "action": "cooperate"}`)
-	err = websocket.Message.Send(conn2, b)
+	// send "defect" command as player 2
+	b = []byte(`{"command": "action", "action": "defect"}`)
+	err = conn2.WriteMessage(messageType, b)
 	checkError(err)
 
-	// receive notification as player 2
-	err = websocket.Message.Receive(conn1, &msg)
+	// receive notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
 	// receive game notification as player 1
-	err = websocket.Message.Receive(conn1, &msg)
+	messageType, msg, err = conn1.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
 	// receive game notification as player 2
-	err = websocket.Message.Receive(conn2, &msg)
+	messageType, msg, err = conn2.ReadMessage()
 	checkError(err)
-	log.Println(msg)
+	log.Println(string(msg))
 
 	log.Println("Test: ----- game() ended -----")
+
 }
