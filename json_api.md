@@ -4,10 +4,14 @@
 
 ### Players -> Server
 
-#### When round is running
-Smileys for other player.
+player sends`{"command" : "join"}` if he's ready to start a game
+server replies `{"command" : "matched"}` as soon as the game is ready to begin
 
-#### Once every round
+#### When round is running
+player sends `{"command" : "action", "action" : "cooperate"}` or `{"command" : "action", "action" : "defect"}`
+Smileys for other player with `{"command" : "signal", "signal" : ?}`
+
+#### After every round server replies
 `{ "result": "cooperate" }` or `{ "result": "defect" }`.
 
 ### Server -> Players
