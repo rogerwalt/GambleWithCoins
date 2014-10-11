@@ -170,12 +170,11 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				err := masc.Withdraw(user.name, amount, address)
 				var b []byte
 				if err != nil {
-					b = string([]byte(fmt.Sprintf(`{"command" : "withdraw", "result" : 
-												{"error": "%s"}}`, err.Error())))
+					b = []byte(fmt.Sprintf(`{"command" : "withdraw", "result" : {"error": "%s"}}`, err.Error()))
 				} else {
-					b = string([]byte(`{"command" : "withdraw", "result" : "success"}`))
+					b = []byte(`{"command" : "withdraw", "result" : "success"}`)
 				}
-				err = websocket.Message.Send(user.conn, b)
+				err = websocket.Message.Send(user.conn, string(b))
 			}
 			<-close
 			ws.Close()
