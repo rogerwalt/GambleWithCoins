@@ -65,8 +65,8 @@ func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 		if m["command"].(string) == "login" {
 			if masc.Login(m["name"].(string), m["password"].(string)) {
 				log.Println("Client logged in")
-				b := string([]byte(`{"command": "login", "result" : "success"}`))
-				err = websocket.Message.Send(ws, b)
+				b := []byte(`{"command": "login", "result" : "success"}`)
+				err = websocket.Message.Send(ws, string(b))
 				if err != nil {
 					e.message = "Could not send back data to client:" + err.Error()
 					e.code = 99
