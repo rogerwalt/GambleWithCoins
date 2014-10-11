@@ -99,7 +99,7 @@ func loginAndRegister(t *testing.T) {
 
 	log.Println("Test: Registering as player 1")
 	// send "join" command as player 1
-	b := []byte(`{"command": "register", "name" : "foo", "password" : "bar"}`)
+	b := []byte(`{"command": "register", "name" : "foo1", "password" : "bar1"}`)
 	err = websocket.Message.Send(conn, b)
 	// fatal error?
 	checkError(err)
@@ -126,7 +126,7 @@ func loginAndRegister(t *testing.T) {
 
 	log.Println("Test: Login as player 1")
 	// send "join" command as player 1
-	b = []byte(`{"command": "login", "name" : "foo", "password" : "bar"}`)
+	b = []byte(`{"command": "login", "name" : "foo1", "password" : "bar1"}`)
 	err = websocket.Message.Send(conn2, b)
 	// fatal error?
 	checkError(err)
@@ -184,7 +184,7 @@ func game(t *testing.T) {
 
 	log.Println("Test: Loggin in as player 1")
 	// send "join" command as player 1
-	b := []byte(`{"command": "login", "name" : "foo", "password" : "bar"}`)
+	b := []byte(`{"command": "login", "name" : "foo1", "password" : "bar1"}`)
 	err = websocket.Message.Send(conn, b)
 	checkError(err)
 
