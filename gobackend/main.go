@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -25,20 +25,30 @@ type User struct {
 	conn *websocket.Conn
 }
 
-func sendError(ws *websocket.Conn, err error) {
-	log.Println("Sending error: ", err.Error())
-	toSend, _ := json.Marshal(map[string]string{"error": err.Error()})
-	websocket.Message.Send(ws, toSend)
+type ApiError struct {
+	message string // api error message
+	code    int    // api error code
+	command string // which api command was executed while the error happened
+}
+
+func sendError(ws *websocket.Conn, err ApiError) {
+	log.Printf("API Error: Code %i, \"%s\", Command \"%s\"", err.code, err.message, err.command)
+	websocket.Message.Send(ws, []byte(`{"command": "`+err.command+`", "result": { "errorCode": `+strconv.Itoa(err.code)+`, "errorMsg": "`+err.message+`"}}`))
 }
 
 // returns a User if a user has successfully authenticated himself,
 // otherwise returns an error
-func authenticate(ws *websocket.Conn) (*User, error) {
+func authenticate(ws *websocket.Conn) (*User, *ApiError) {
 	var msg string
+	var e ApiError
 	err := websocket.Message.Receive(ws, &msg)
 	if err != nil {
-		return nil, err
+		e.message = "Could not receive data from client:" + err.Error()
+		e.code = 98
+		e.command = "_undefined"
+		return nil, &e
 	}
+	log.Printf("Authenticate: Received data from client with RemoteAddr: %v", ws.RemoteAddr())
 
 	var m map[string]interface{}
 	json.Unmarshal([]byte(msg), &m)
@@ -57,45 +67,73 @@ func authenticate(ws *websocket.Conn) (*User, error) {
 				b := []byte(`{"command": "login", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
-					return nil, err
+					e.message = "Could not send back data to client:" + err.Error()
+					e.code = 99
+					e.command = "login"
+					return nil, &e
 				}
+				log.Println("Authenticate:", m["name"], "logged in")
 				return &User{m["name"].(string), ws}, nil
 			} else {
-				return nil, errors.New("Wrong password")
+				e.message = "Wrong username or password."
+				e.code = 1
+				e.command = "login"
+				log.Printf("Authenticate: %v entered wront username or password", m["name"].(string))
+				return nil, &e
 			}
 		} else if m["command"].(string) == "register" {
 			err := masc.Register(m["name"].(string), m["password"].(string))
 			if err != nil {
-				return nil, err
+				e.message = "Could not register new user:" + err.Error()
+				e.code = 999
+				e.command = "register"
+				log.Println("Authenticate:", m["name"], "could not register")
+				return nil, &e
 			} else {
 				log.Println("Client registered")
 				b := []byte(`{"command": "register", "result" : "success"}`)
 				err = websocket.Message.Send(ws, b)
 				if err != nil {
-					return nil, err
+					e.message = "Could not send back data to client:" + err.Error()
+					e.code = 99
+					e.command = "login"
+					log.Println("Authenticate:", m["name"], "did not receive data")
+					return nil, &e
 				}
+				log.Println("Authenticate:", m["name"], "registered successfully")
 				return &User{m["name"].(string), ws}, nil
 			}
 		}
 	}
 	disconnectClient(nil, ws)
-	return nil, errors.New("Too many unsuccessful logins")
+	e.message = "Too many unsuccessful logins."
+	e.code = 2
+	if m["command"].(string) == "login" {
+		e.command = "login"
+	} else if m["command"].(string) == "register" {
+		e.command = "register"
+	} else {
+		e.command = "_undefined"
+	}
+	log.Println("Authenticate: Too many unsuccessful logins")
+	return nil, &e
 }
 
 func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 	return func(ws *websocket.Conn) {
 		log.Println("Client connected")
 
-		user, err := authenticate(ws)
-		if err != nil {
-			sendError(ws, err)
+		user, e := authenticate(ws)
+		if e != nil {
+			sendError(ws, *e)
 			ws.Close()
 			return
 		}
 
+		log.Println("makeGame:", user.name, "Successfully authenticated")
 		for {
 			var msg string
-			err = websocket.Message.Receive(ws, &msg)
+			err := websocket.Message.Receive(ws, &msg)
 			checkError(err)
 
 			// interpret message as json data
@@ -141,6 +179,7 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 			<-close
 			ws.Close()
 		}
+		log.Println("makeGame: End")
 	}
 }
 
@@ -330,7 +369,7 @@ ActionLoop:
 func handleGame(user1, user2 *User) {
 	bet := 1000
 	p := 0.2
-	E := int(0.2 * float64(bet))
+	E := int(p * 2 * float64(bet))
 
 RoundLoop:
 	for {
@@ -446,7 +485,7 @@ func checkError(err error) {
 
 func disconnectClient(user *User, ws *websocket.Conn) {
 	log.Println("Disconnecting client due to invalid requests.")
-	toSend, _ := json.Marshal(map[string]string{"error": "Disconnecting client due to invalid requests."})
+	toSend, _ := json.Marshal(map[string]string{"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": strconv.Itoa(10)})
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<link rel="icon" href="../../favicon.ico">
+
+	<title>Gamble with coins</title>
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="/css/loadingbar.css">
+  <link rel="stylesheet" href="/css/app.css">
+
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/tab.min.js"></script>
+
+
+  <script src="/js/app.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/services.js"></script>
+  <script src="/js/controllers.js"></script>
+  <script src="/js/filters.js"></script>
+  <script src="/js/directives.js"></script>
+
+
+	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <![endif]-->
+  </head>
+
+  <body ng-controller="AppCtrl">
+ 	<div class="upperpart">
+  	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+  		<div class="container">
+  			<div class="navbar-header">
+  				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+  					<span class="sr-only">Toggle navigation</span>
+  					<span class="icon-bar"></span>
+  					<span class="icon-bar"></span>
+  					<span class="icon-bar"></span>
+  				</button>
+  				<a class="navbar-brand" href="#">
+  					Gamble With <i class="fa fa-btc"></i>Coins
+  				</a>
+  			</div>
+  			<div class="navbar-collapse collapse">
+  				<form class="navbar-form navbar-right" role="form">
+  					<button class="btn bnt-mainmenu">Settings</button>
+  					<button class="btn bnt-mainmenu">Manage balance</button>
+  				</form>
+  			</div><!--/.navbar-collapse -->
+  		</div>
+  	</div>
+
+  	<!-- Main jumbotron for a primary marketing message or call to action -->
+  	<div class="jumbotron header">
+  		<div class="container balance">
+  			<h1>Your balance:</h1>
+  			<p>$109</p>
+
+  		</div>
+  		<div class="container rounds">
+  		  	<span><i class="fa fa-info-circle fa-2x"></i></span>
+
+  			<h2>Round 1</h2>
+  		</div>
+  	</div>
+
+ 	<div class="jumbotron center">
+  	<div class="container galaxy">
+  		<!-- Example row of columns -->
+  		<div class="row">
+  			<div class="col-md-4 col-xs-4">
+  			    <span ng-show="matched" class="fa-stack fa-4x transparant">
+  					<i class="fa fa-circle-thin fa-stack-2x"></i>
+  					<i class="fa fa-check-circle fa-stack-1x" ng-click="sendAction('defect')"></i>
+  				</span>
+  			</div>
+
+  			<div class="col-md-4 col-xs-4">
+ 				  <button class="round-button" ng-show="!join" ng-click="joinGame()">JOIN</button>
+          <div class="awaiting" ng-show="!matched && join == true">
+                    <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
+          <p>Selecting an opponent...</p>
+</div>
+
+  				<div ng-show="matched && join" ang:round:progress ng-model="roundProgresData.label"
+          data-round-progress-model="roundProgressData"
+  				data-round-progress-width="85"
+  				data-round-progress-height="100"
+  				data-round-progress-outer-circle-width="10"
+  				data-round-progress-outer-circle-radius="30"
+  				data-round-progress-label-font="15pt Arial"
+  				data-round-progress-outer-circle-background-color="rgba(255, 255, 255, 0.2)"
+  				data-round-progress-outer-circle-foreground-color="rgba(255, 255, 255, 0.9)"
+  				data-round-progress-inner-circle-color="#505769"
+  				data-round-progress-label-color="#fff"></div>
+
+  				<!-- <input type="number" ng-model="roundProgressData.label"/> -->
+  			</div>
+  			<div class="col-md-4 col-xs-4">
+  				<span ng-show="matched" class="fa-stack fa-4x transparant">
+  					<i class="fa fa-circle-thin fa-stack-2x"></i>
+  					<i class="fa fa-times-circle fa-stack-1x" ng-click="sendAction('coorperate')"></i>
+  				</span>
+  			</div>
+  		</div>
+
+ 		<div class="row">
+ 		<p>Chat with your opponent...</p>
+ 		</div>
+  		 <div class="row chat-menu">
+  					<i ng-click="sendSignal(1)" class="fa fa-times-circle fa-4x"></i>
+  					<i ng-click="sendSignal(2)" class="fa fa-check-circle fa-4x"></i>
+  					<i ng-click="sendSignal(3)" class="fa fa-smile-o fa-4x"></i>
+  					<i ng-click="sendSignal(4)" class="fa fa-frown-o fa-4x"></i>
+  				</span>
+  		</div>
+  	</div>
+  	</div>
+  	</div>
+
+  	<div class="jumbotron messagefield">
+                <!--  <button class="btn" ng-click="matched = true">Match!</button> -->
+                <!-- <button class="btn" ng-click="countDown(10)">Countdoun</button> -->
+
+  		<div class="container">
+  		 	<div class="col-xs-6 col-md-4 pull-left text-left">You </div>
+  		 	<div class="col-xs-6 col-md-4 pull-right text-right">Opponent<i class="fa fa-bar-chart lg"></i></div>
+  		</div>
+  		  		 	<hr>
+
+        <div scroll:glue="glued" class="container signaloverview">
+  		 	<div ng-repeat="signal in signals" class="row message {{ signal.player == 'you' ? 'text-left' : 'text-right'}}">
+  		 	<div class="speechbubble"> <i class="fa {{signalIcons[signal.signal - 1] }} fa-3x"></i></div>
+        </div>
+
+  		</div>
+  	</div>
+  	<!-- /container -->
+  </body>
+  			<footer>
+  			<div class="container">
+  			 			<hr>
+
+  				<p>&copy; The coding pandas 2014</p>
+  				</div>
+  			</footer>
+  </html>

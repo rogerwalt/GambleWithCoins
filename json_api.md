@@ -16,6 +16,17 @@ returns either
 
 or `{"command" : "login", "result" {"error" : error_message}}`
 
+## errors
+### general error
+`{"errorCode": 50, "errorMsg" : "Disconnecting client due to invalid requests."}` is sent if the client sends unknown commands.
+### errorcodes
+* 1: Wrong username or password.
+* 2: Too many unsuccessful logins.
+* 50: Invalid requests.
+* 98: Could not receive any data from client. 
+* 99: Could not send back data to client (probably never gonna happen).
+* 999: Could not register new user.
+
 ## general
 ### balance
 `{"command" : "getBalance"}` is sent from the client to server to retrieve the current balance
