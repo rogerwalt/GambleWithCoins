@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -200,7 +201,7 @@ func makeGame(ready chan *User, hubDone chan chan int, close chan bool) func(w h
 			}
 
 			// check what the command is;
-			switch f["command"] {
+			switch strings.Trim(f["command"].(string), "\"") {
 			case "join":
 				fmt.Println("Client to the hub")
 				ready <- user
@@ -317,7 +318,7 @@ func handleGameRound(user1, user2 *User, b, E int) {
 			chose <- player
 			return action
 		} else if f["command"] == "signal" {
-			signal := f["signal"]
+			signal := f["signal"].(string)
 			log.Println("Received signal from player", player, signal)
 			sender <- fmt.Sprintf(`{"command" : "signal", "signal" : %s}`, signal)
 		}
