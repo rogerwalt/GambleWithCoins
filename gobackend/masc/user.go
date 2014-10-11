@@ -32,6 +32,16 @@ func Register(name, password string) error {
 	return err
 }
 
+func Login(name, password string) bool {
+	var expected string
+	row := db.QueryRow("SELECT password FROM Users WHERE name = ?", name)
+	err := row.Scan(&expected)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return expected == password
+}
+
 //TODO: secure against race conditions
 func GetBalance(name string) (int, error) {
 	var balanceStr string
@@ -110,12 +120,27 @@ func GetDepositAddress(name string) (string, error) {
 	return depositAddress, nil
 }
 
-func Login(name, password string) bool {
-	var expected string
-	row := db.QueryRow("SELECT password FROM Users WHERE name = ?", name)
-	err := row.Scan(&expected)
+func GetNameFromDepositAddress(address string) (string, error) {
+	var name string
+	//TODO: index on depositAddress
+	row := db.QueryRow("SELECT name FROM Users WHERE depositAddress = ?", address)
+	err := row.Scan(&name)
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
-	return expected == password
+	return name
+}
+
+// TODO: store transaction id
+func InsertIncomingTransactionsInDb(confirmed chan *bitcoin.RecvTransaction) {
+	for {
+		select {
+		case tx := <-confirmed:
+			name, err := GetNameFromDepositAddress(tx.address)
+			if err != nil {
+				continue
+			}
+			UpdateBalance(name, amount)
+		}
+	}
 }
