@@ -2,7 +2,7 @@
 
 /* Controllers */
 
-function AppCtrl($scope) {
+function AppCtrl($scope, $q, $rootScope) {
 
 // Socket listeners
 // ================
@@ -13,10 +13,88 @@ $scope.roundProgressData = {
       percentage: 0
 }
 
-var connection = new WebSocket("ws://localhost:8080/play/",'json');
+$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
+$scope.signals = [];
+$scope.join = false;
 
-var sendRequest = function(request) {
-  connection.onopen = function () {
+
+    // Keep all pending requests here until they get responses
+    var callbacks = {};
+
+    // Create a unique callback ID to map requests to responses
+    var currentCallbackId = 0;
+
+    // Create our websocket object with the address to the websocket
+    var ws = new WebSocket("ws://localhost:8080/play/");
+  
+    ws.onmessage = function(message) {
+        console.log(message.data);
+        listener(JSON.parse(message.data));
+    };
+
+    function sendRequest(request) {
+      var defer = $q.defer();
+      var callbackId = getCallbackId();
+      callbacks[callbackId] = {
+        time: new Date(),
+        cb:defer
+      };
+
+      request.callback_id = callbackId;
+      console.log('Sending request', request);
+      ws.send(JSON.stringify(request));
+      return defer.promise;
+    }
+
+    function listener(data) {
+      var messageObj = data;
+      console.log("Received data from websocket: ", messageObj);
+      if (typeof messageObj.result.errorCode != "undefined") {
+        console.log('Error: ' + messageObj.result.errorMsg);
+      }
+
+      // If an object exists with callback_id in our callbacks object, resolve it
+      if(callbacks.hasOwnProperty(messageObj.callback_id)) {
+        console.log(callbacks[messageObj.callback_id]);
+        $rootScope.$apply(callbacks[messageObj.callback_id].cb.resolve(messageObj.data));
+        delete callbacks[messageObj.callbackID];
+      }
+    }
+    // This creates a new callback ID for a request
+    function getCallbackId() {
+      currentCallbackId += 1;
+      if(currentCallbackId > 10000) {
+        currentCallbackId = 0;
+      }
+      return currentCallbackId;
+    }
+
+// Setting up the websocket connection 
+/*var connection = new WebSocket("ws://localhost:8080/play/",'json');
+
+function sendRequest(request) {
+  var defer = $q.defer();
+      var callbackId = getCallbackId();
+      callbacks[callbackId] = {
+        time: new Date(),
+        cb:defer
+      };
+      request.callback_id = callbackId;
+      console.log('Sending request', request);
+      connection.send(JSON.stringify(request));
+      return defer.promise;
+}
+
+connection.onopen = function(){  
+    console.log("Socket has been opened!");  
+    };
+    
+connection.onmessage = function(message) {
+        listener(JSON.parse(message.data));
+    };
+
+/*var sendRequest = function(request) {
+ connection.onopen = function () {
     connection.send(JSON.stringify(request)); //send a message to server once connection is opened.
   };
 
@@ -36,25 +114,34 @@ var sendRequest = function(request) {
 
   };
 };
+*/
 
 $scope.getBalance = function() {
-  var request = {command: 'getBalance'};
-  return sendRequest(request);
+  ws.onopen = function(){  
+      console.log("Socket has been opened!");  
+      var request = {command: 'getBalance'};
+      $scope.balance = sendRequest(request);
+  };
 };
 
+$scope.login = function(name, password) {
+  ws.onopen = function(){  
+      var request = {command: 'login', name: name, password: password};
+      $scope.balance = sendRequest(request);
+  };
+};
+
+console.log('Check that login');
+$scope.login('Roger', 'lotteiscool');
+
+
 console.log('Check that balance');
-console.log($scope.getBalance());
-
-//$scope.customers = WebSocketFactory.getCustomers();
-
-$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o']
+//console.log($scope.getBalance());
 
 $scope.$watch('roundProgressData', function (newValue, oldValue) {
   newValue.percentage = newValue.label / 100;
 }, true);
 
-$scope.signals = [{player: 'you', signal: 1}, {player:'opposite', signal: 2}];
-$scope.join = false;
 
 /*
 socket.on('')
@@ -100,14 +187,6 @@ socket.on('outcome', function (data) {
 
 // Methods published to the scope
 // ==============================
-
-// Player indicates he wants to start a new game
-$scope.joinGame = function() {
-  console.log('joingame')
-  socket.emit('join');
-  $scope.join = true;
-  console.log($scope.join)
-}
 
 // Request a depost address
 $scope.getDepositAddress = function() {
