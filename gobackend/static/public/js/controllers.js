@@ -117,9 +117,7 @@ $scope.joinGame = function() {
 }
 
 $scope.sendRequestOnOpen = function(request) {
-  ws.onopen = function(){  
-      return sendRequest(request);
-  };
+  return sendRequest(request);
 }
 
 //$scope.login('Roger', 'lotteiscool');

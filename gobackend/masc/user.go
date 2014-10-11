@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/rogerwalt/GambleWithCoins/gobackend/bitcoin"
@@ -53,7 +54,7 @@ func AddAction(name, action string) bool {
 	} else {
 		fmt.Println("Action does not exist")
 	}
-	
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -109,6 +110,7 @@ func Withdraw(name string, amount int, address string) error {
 	//TODO: store txhash
 	_, err = bitcoin.SendCoins(address, amount)
 	if err != nil {
+		log.Println("Withdraw ", amount, " from ", name, " to ", address)
 		UpdateBalance(name, amount)
 		return err
 	}
@@ -158,6 +160,7 @@ func InsertIncomingTransactionsInDb(confirmed chan *bitcoin.RecvTransaction) {
 			if err != nil {
 				continue
 			}
+			log.Println("Inserting ", tx.Amount, " for ", name, " with address ", tx.Address, " in database")
 			UpdateBalance(name, tx.Amount)
 		}
 	}
