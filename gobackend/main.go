@@ -135,7 +135,9 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 		for {
 			var msg string
 			err := websocket.Message.Receive(ws, &msg)
-			checkError(err)
+			if err != nil {
+				continue
+			}
 
 			// interpret message as json data
 			// errors like "Fatal error  invalid character 'j' looking for beginning of value" are because of invalid JSON data
