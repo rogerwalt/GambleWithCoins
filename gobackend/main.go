@@ -157,8 +157,8 @@ func makeGame(ready chan *User, close chan bool) func(*websocket.Conn) {
 				ready <- user
 			case "getBalance":
 				balance, _ := masc.GetBalance(user.name)
-				b := string([]byte(fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance)))
-				err = websocket.Message.Send(user.conn, b)
+				b := fmt.Sprintf(`{"command" : "balance", "result" : %d}`, balance)
+				err = websocket.Message.Send(user.conn, string(b))
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
 				b := string([]byte(fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
@@ -340,7 +340,7 @@ func checkError(err error) {
 
 func disconnectClient(user *User, ws *websocket.Conn) {
 	log.Println("Disconnecting client due to invalid requests.")
-	toSend, _ := json.Marshal(map[string]string{"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": strconv.Itoa(10)})
+	toSend := string([]byte(`{"result": {"errorMsg": "Disconnecting client due to invalid requests.", "errorCode": `+strconv.Itoa(10)+`}}`))
 	websocket.Message.Send(ws, toSend)
 	ws.Close()
 	if user != nil {
