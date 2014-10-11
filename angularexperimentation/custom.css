@@ -1,36 +1,62 @@
+html {
+  height: 100%;
+}
+
 body {
+  text-transform: uppercase;
+    background-color: #eee;
+  height: 100%;
+
+}
+
+.jumbotron.center {
   background-color: #0b131e;
   text-transform: uppercase;
 
   background-image: 
    -webkit-radial-gradient(40% 45%, circle, #98373c, transparent),
-   -webkit-radial-gradient(45% 55%, circle, #503549, transparent);
-   /*
-   -webkit-radial-gradient(10% 10%, circle, #E1C3B9, transparent); */
+   -webkit-radial-gradient(40% 60%, circle, #503549, transparent);
 
-   radial-gradient(80% 10%, circle, #BF7667, transparent),
-   radial-gradient(80% 50%, circle, #EFDDB7, transparent);
-  /*radial-gradient(10% 10%, circle, #E1C3B9, transparent); */
+   radial-gradient(40% 45%, circle, #98373c, transparent),
+   radial-gradient(40% 60%, circle, #503549, transparent);
+
+  padding: 0px;
+  margin: 0px;
 }
 
-.jumbotron {
+.jumbotron.header {
+  padding: 0px;
   padding-top: 58px;
-  padding-bottom: 10px;
-  height: 180px;
+  padding-bottom: 0px;
+  margin-bottom:0px;
+  display: overflow;
+  overflow: visible;
 }
 
-.jumbotron h1 {
+.jumbotron.header h1 {
   font-size: 18px;
 }
 
-.jumbotron p {
+.jumbotron.header p {
   font-size: 25px;
 }
 
+.jumbotron.messagefield {
+  padding: 0px;
+  padding-top: 10px;
+  color: #832228;
+}
+
+.jumbotron.messagefield hr {
+  margin-top: 10px;
+}
+
 .container.rounds {
+  text-align: center;
   background-color: #0b131e;
   color: #fff;
   padding: 0px;
+  z-index: 1000;
 }
 
 .container.rounds h2 {
@@ -45,18 +71,46 @@ body {
 
 .container.galaxy {
   padding-top: 20px;
-  padding-bottom: 30px;
 }
+
 .container.galaxy i {
   color: white;
 }
 
-.messagefield {
+.container.galaxy .row p {
+  color: white;
+  text-align: left;
+  padding: 5px;
+  margin: 0px;
+  font-size: 13px;
+}
+
+.transparant i.fa-stack-2x {
+  color: #a3384b;
+  opacity: 0.2; 
+}
+
+.jumbotron.messagefield {
   margin-bottom: 0px;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.jumbotron.messagefield i.fa-bar-chart {
+  margin-left: 10px;
+}
+
+.jumbotron.messagefield hr {
+  border-color: #832228;
 }
 
 footer hr {
   border-color: #832228;
+}
+
+footer p {
+  font-size: 13px;
+  height: auto;
 }
 
 .bnt-mainmenu {
@@ -66,6 +120,22 @@ footer hr {
   margin: 0px 5px 0px 0px;
 }
 
+.chat-menu {
+  font-size: 10px;
+    /* Fallback for web browsers that don't support RGBa */
+    background-color: rgb(255, 255, 255);
+    /* RGBa with 0.6 opacity */
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 5px;
+
+}
+
+.galaxy .chat-menu i {
+    color: #0b131e;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
 .bnt-mainmenu:hover {
   color: #963b43;
 }
@@ -73,3 +143,57 @@ footer hr {
 .navbar-inverse {
   background-color: #0b131e;
 }
+
+.messagefield .row {
+  color: #832228;
+}
+
+.message {
+  margin: 10px;
+}
+
+.row.message.text-right {
+  text-align: right;
+}
+
+.text-right .speechbubble {
+  float: right;
+}
+.text-right .speechbubble:after {
+  left: 40%;
+}
+
+.speechbubble i {
+  height: 30px;
+}
+.speechbubble {
+   text-align: center;
+   width: 200px;
+   height: 55px;
+   padding: 10px;
+   background: #d4d4d4;
+    color: #832228;
+   font: normal 12px "Segoe UI", Arial, Sans-serif;
+   -moz-border-radius: 10px;
+   -webkit-border-radius: 10px;
+   border-radius: 10px;
+
+  }
+  .speechbubble:after
+  {
+   content: "";
+   border: solid 10px transparent; /* set all borders to 10 pixels width */
+   border-bottom-color: #d4d4d4; /* the callout */
+   border-top: 0; /* we do not need the bottom border in this case */
+   width: 0;
+   height: 0;
+   overflow: hidden;
+   display: block;
+   position: relative;
+   top: -52px; /* border-width of the :after element + padding of the root element */
+   left: -40%;
+   margin-left: auto;
+   margin-right: auto;
+  }
+
+
