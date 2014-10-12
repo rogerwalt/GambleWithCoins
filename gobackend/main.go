@@ -319,9 +319,9 @@ func handleGameRound(user1, user2 *User, b, E int) {
 			chose <- player
 			return action
 		} else if f["command"] == "signal" {
-			signal := f["signal"].(string)
+			signal := f["signal"].(int)
 			log.Println("Received signal from player", player, signal)
-			sender <- fmt.Sprintf(`{"command" : "signal", "signal" : %s}`, signal)
+			sender <- fmt.Sprintf(`{"command" : "signal", "signal" : %d}`, signal)
 		}
 		return action
 	}
