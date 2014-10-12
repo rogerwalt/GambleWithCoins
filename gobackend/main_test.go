@@ -402,7 +402,7 @@ func game(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
 	conn1, conn2 := joinGame("foo1", "bar1", 100000, "foo2", "bar2", 100000)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		gameRound(conn1, conn2)
 	}
 
@@ -448,7 +448,7 @@ func game(t *testing.T) {
 	log.Println(string(msg))
 	checkError(err)
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 1; i++ {
 		gameRound(conn1, conn2)
 	}
 

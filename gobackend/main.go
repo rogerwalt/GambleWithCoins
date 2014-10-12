@@ -402,8 +402,12 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 			cooperate1, defect1)
 	}
 
+	//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
+	rounds := rand.Intn(4)
+	rounds = rounds + 1
+
 RoundLoop:
-	for {
+	for i := 0; i < rounds; i++ {
 		log.Println("New game round")
 
 		// check if players have enough funds to play a round
@@ -411,43 +415,30 @@ RoundLoop:
 		balance2, _ := masc.GetBalance(user2.name)
 		log.Println("Players balance: ", balance1, balance2)
 
-		endGame := func() {
-			user1.sendChan <- `{"command": "endGame"}`
-			user2.sendChan <- `{"command": "endGame"}`
-		}
 		switch {
 		case balance1 < bet && balance2 < bet:
 			log.Println("Both players have not enough funds left")
-			endGame()
 			break RoundLoop
 		case balance1 < bet:
 			// player 2 gets the remaining money and the game ends
 			log.Println("Player 1 does not have enough funds left")
-			endGame()
 			break RoundLoop
 		case balance2 < bet:
 			//player 1 gets the remaining money and the game ends
 			log.Println("Player 2 does not have enough funds left")
-			endGame()
 			break RoundLoop
 		}
-
 		// players have sufficient funds for the next round
-		// check if game ends
-		//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
-		r := rand.Intn(100)
-		if float64(r) <= 100*p {
-			log.Println("End game: bank wins bets.")
-			masc.UpdateBalance(user1.name, -bet)
-			masc.UpdateBalance(user2.name, -bet)
-			//end game
-			endGame()
-			break RoundLoop
-		}
 
 		handleGameRound(user1, user2, bet, E)
 	}
 
+	log.Println("End game: bank wins bets.")
+	masc.UpdateBalance(user1.name, -bet)
+	masc.UpdateBalance(user2.name, -bet)
+
+	user1.sendChan <- `{"command": "endGame"}`
+	user2.sendChan <- `{"command": "endGame"}`
 	done1 <- 1
 	done2 <- 1
 
