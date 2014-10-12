@@ -1,6 +1,20 @@
 'use strict';
 
-var WebSocketHandler = {
+/* Controllers */
+
+function AppCtrl($scope, $q, $rootScope, $timeout) {
+
+  $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
+  $scope.signals = [];
+  $scope.join = false;
+  $scope.authenticated = false;
+  $scope.matched = false;
+  $scope.round = 1;
+  $scope.balance = 0;
+  $scope.endOfRound = false;
+  $scope.myAction = null;
+
+  var WebSocketHandler = {
   isConnected: false,
   webSocket: null,
   connect: function() {
@@ -16,19 +30,20 @@ var WebSocketHandler = {
       }
     }
   },
-  send: function(dataToSend, receiveCallback) {
+  send: function(dataToSend) {
     // check if connected
     if (WebSocketHandler.isConnected) {
       // send stuff
       WebSocketHandler.webSocket.send(JSON.stringify(dataToSend));
       // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
-      WebSocketHandler.webSocket.onmessage = function(message) {
-        receiveCallback(JSON.parse(message.data));
-      };
+      //WebSocketHandler.webSocket.onmessage = function(message) {
+      //  receiveCallback(JSON.parse(message.data));
+      //};
     } else {
       console.log("Error: Not yet connected.");
     }
   },
+
   listen: function(receiveCallback) {
     WebSocketHandler.webSocket.onmessage = function(message) {
       receiveCallback(JSON.parse(message.data));
@@ -36,37 +51,60 @@ var WebSocketHandler = {
   }
 };
 
-/* Controllers */
-
-function AppCtrl($scope, $q, $rootScope, $timeout) {
-
 var maxCount = 30;
-$scope.minAmount = 1000;
+$scope.minAmount = -1000;
 WebSocketHandler.connect({});
 
-WebSocketHandler.listen(function(d) {
-    if(d.data.command == "signal") {
+WebSocketHandler.listen(function(data) {
+    if(data.command == "signal") {
       signals.push({'player': opponent, 'signal': data.signal});
-    }
+    };
 
-    if(d.data.command == "endRound") {
+    if(data.command == "register") {
+      if(data.result == 'success') {
+        $scope.authenticated = true;
+      } else {
+        location.reload();
+      }
+    };
+
+    if(data.command == "endRound") {
       $scope.myAction = null;
       $scope.recentOutcome = data.outcome;
       $scope.recentBalanceDifference = data.balanceDifference;
       $scope.round += 1;
       $scope.initRound();
-    }
+    };
 
-    if(d.data.command == "endGame") {
+    if(data.command == 'balance') {
+      $scope.balance = data.result;
+    };
+
+    if(data.command == "login") {
+      if(data.result == 'success') {
+        $scope.authenticated = true;
+        $scope.getBalance();
+      } else {
+        location.reload();
+      }
+    };
+
+    if(data.command == "endGame") {
       $scope.round = 0;
       $scope.myAction = null;
       $scope.matched = false;
       $scope.round = 0;
-    }
+    };
 
-    if(d.data.command == "matched") {
+    if(data.command == "matched") {
+      console.log("We match as motherfuckers");
       $scope.matched = true;
-    }
+    };
+
+});
+
+$scope.$watch('matched', function(value) {
+  console.log(value);
 });
 
 $scope.$watch('endOfRound', function(value) {
@@ -100,16 +138,6 @@ $scope.roundProgressData = {
       percentage: 0
 }
 
-$scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
-$scope.signals = [];
-$scope.join = false;
-$scope.authenticated = false;
-$scope.matched = false;
-$scope.round = 1;
-$scope.balance = 0;
-$scope.endOfRound = false;
-$scope.myAction = null;
-
 $scope.initRound = function() {
     $scope.getBalance();
     $scope.endOfRound = false;
@@ -118,106 +146,18 @@ $scope.initRound = function() {
     $scope.signals = []
 }
 
-    // Keep all pending requests here until they get responses
-    var callbacks = {};
-
-    // Create a unique callback ID to map requests to responses
-    var currentCallbackId = 0;
-
-    // Create our websocket object with the address to the websocket
-    var ws = new WebSocket("ws://localhost:8080/play/");
-  
-    ws.onmessage = function(message) {
-        console.log(message.data);
-        listener(JSON.parse(message.data));
-    };
-
-    function sendRequest(request) {
-      var defer = $q.defer();
-      var callbackId = getCallbackId();
-      callbacks[callbackId] = {
-        time: new Date(),
-        cb:defer
-      };
-
-      request.callback_id = callbackId;
-      console.log('Sending request', request);
-      ws.send(JSON.stringify(request));
-      return defer.promise;
-    }
-
-    function listener(data) {
-      var messageObj = data;
-
-      console.log("Received data from websocket: ", messageObj);
-      if (typeof messageObj.result.errorCode != "undefined") {
-        console.log('Error: ' + messageObj.result.errorMsg);
-      }
-
-      if(messageObj.command == "matched") {
-        $scope.matched = true;
-      }
-
-      if(messageObj.command == "stats") {
-        var co = data.result.cooperate;
-        var de = data.result.defect;
-        var sum = co + de;
-        
-        $scope.matched = true;
-      }
-
-      if(messageObj.command == "login" && messageObj.result == "success") {
-        console.log("Succesfully logged in!")
-        $scope.authenticated = true;
-        console.log($scope.authenticated)
-      }
-
-      // If an object exists with callback_id in our callbacks object, resolve it
-      if(callbacks.hasOwnProperty(messageObj.callback_id)) {
-        console.log(callbacks[messageObj.callback_id]);
-        $rootScope.$apply(callbacks[messageObj.callback_id].cb.resolve(messageObj.data));
-        delete callbacks[messageObj.callbackID];
-      }
-    }
-    // This creates a new callback ID for a request
-    function getCallbackId() {
-      currentCallbackId += 1;
-      if(currentCallbackId > 10000) {
-        currentCallbackId = 0;
-      }
-      return currentCallbackId;
-    }
 
 $scope.getBalance = function() {
-  WebSocketHandler.send({'command': 'getBalance'}, function(data) {
-    if(data.command == 'balance') {
-      console.log(data)
-      console.log('balance: ' + data.result);
-      $scope.balance = data.result;
-    }
-  });
+  WebSocketHandler.send({'command': 'getBalance'});
 };
 
 $scope.login = function(name, password) {
-  WebSocketHandler.send({command: 'login', name: name, password: password}, function(data) {
-    if(data.result == 'success') {
-      $scope.authenticated = true;
-      $scope.getBalance();
-    } else {
-      location.reload();
-    }
-  });
-
+  WebSocketHandler.send({command: 'login', name: name, password: password});
 };
 
 $scope.register = function(name, password) {
-  WebSocketHandler.send({command: 'register', name: name, password: password}, function(data) {
-    if(data.result == 'success') {
-      $scope.authenticated = true;
-    }
-  });
+  WebSocketHandler.send({command: 'register', name: name, password: password});
 };
-
 
 // Player indicates he wants to start a new game
 $scope.joinGame = function() {
