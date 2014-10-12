@@ -58,8 +58,8 @@
   			<div class="navbar-collapse collapse">
   				<form class="navbar-form navbar-right" role="form">
 
-  					<button ng-show="authenticated" class="btn bnt-mainmenu">Logout</button>
-  					<button ng-show="authenticated" class="btn bnt-mainmenu">Manage balance</button>
+  					<button ng-show="authenticated" class="btn bnt-mainmenu" ng-click="logout()">Logout</button>
+  					<button  data-original-title="Your personal QR CODE" data-container="body" data-toggle="popover" data-placement="bottom" data-content="<img src='{{depositaddress}}' style='width: 200px'><p>You can easily use this QR code to update your balance</p>" ng-show="authenticated" id="manage_balance" class="btn bnt-mainmenu">Manage balance</button>
   				</form>
   			</div><!--/.navbar-collapse -->
   		</div>
@@ -77,7 +77,7 @@
   		<div class="container rounds">
       <span id="info" data-original-title="About this game" data-container="body" data-toggle="popover" data-placement="right" data-content="<p>Bet, Decide & Win! In this game you have to bet bitcoins to win back the double amount of it. It’s not just luck which decides about the outcome. It’s all about strategy! You play against a random enemy and can win his bet. But be patient and play wisely! Because you do not only play a random number of rounds after a bomb explodes and no one gets paied (between 0 and 9), you also get to know what the other decided last round. Both of you have to choose between stealing or split. If both of you decide to split, you get your money back plus 10% more! But if one of you splits and the other steals, the one which stole gets all the money. Still, if both steal that's definitly not they way you want to go, since than no one gets enything!</p><p style='text-align: center'><table id='probtable' style='display: block; padding-left: 42%;'><thead><tr><th></th><th align='center'>C</th><th align='right'>D</th></tr></thead><tbody><tr><td style='font-weight: bold;'>C</td><td align='center'>E/2, E/2</td><td align='right'>-b, b</td></tr><tr><td style='font-weight: bold;'>D</td><td align='center'>b, -b</td><td align='right'>0, 0</td></tr></tbody></table></p><p> To help you influence your competitor you can use signaling trough 4 emoticons. Then there is the statistics about the behavior of your opponent which should help you to lay out a strategy. But think fast, the clock is running! Can you destroy your enemy?</p>"><i class="fa fa-info-circle fa-2x"></i></i></span>
 
-  			<h2 ng-show="join">Round 1</h2>
+  			<h2 ng-show="join">Round {{ round }}</h2>
         <h2 ng-show="!join && !authenticated">Sign in and start playing!</h2>
         <h2 ng-show="!join && authenticated">Click on join to start your first match</h2>
 
@@ -90,7 +90,7 @@
   		<!-- Example row of columns -->
   		<div class="row">
   			<div class="col-md-4 col-xs-4">
-  			    <span ng-show="matched" class="fa-stack fa-4x transparant">
+  			    <span ng-show="matched == 1" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
   					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'coorperate'}" class="fa fa-check-circle fa-stack-1x" ng-click="performAction('coorperate')"></i>
   				</span>
@@ -106,12 +106,12 @@
           </div>
 
  				  <button class="round-button" ng-show="join == false && authenticated == true && balance >= minAmount" ng-click="joinGame()">JOIN</button>
-          <div class="awaiting" ng-show="!matched && join == true">
+          <div class="awaiting" ng-show="matched == 0 && join == true">
                     <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
           <p>Selecting an opponent...</p>
 </div>
 
-          <div class="awaiting" ng-show="waitForOpponent && !endOfRound && matched">
+          <div class="awaiting" ng-show="waitForOpponent && !endOfRound && matched == 1">
                     <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
           <p>Waiting for opponent to choose...</p>
 </div>
@@ -120,13 +120,13 @@
           <p>You don't have enough funds to play. Please increase your balance at the balance managing section.</p>
 </div>
 
-          <div class="awaiting" ng-show="endOfRound && matched">
+          <div class="awaiting" ng-show="endOfRound && matched == 1">
 The round has ended! You choose for {{ recentOutcome.me }} and your opponent
         played {{ recentOutcome.other }}. This gives you a pay-off of {{ recentBalanceDifference.me }} and your opponent got {{ recentBalanceDifference.other}}.</p>
         </div>
 
-          <div ng-show="matched && join && !endOfRound && !waitForOpponent" class="counter">{{ counter }}</div>
-  				<div ng-show="matched && join && !endOfRound && !waitForOpponent" ang:round:progress ng-model="roundProgresData.label"
+          <div ng-show="matched == 1 && join && !endOfRound && !waitForOpponent" class="counter">{{ counter }}</div>
+  				<div ng-show="matched == 1 && join && !endOfRound && !waitForOpponent" ang:round:progress ng-model="roundProgresData.label"
           data-round-progress-model="roundProgressData"
   				data-round-progress-width="85"
   				data-round-progress-height="100"
@@ -142,7 +142,7 @@ The round has ended! You choose for {{ recentOutcome.me }} and your opponent
   				<!-- <input type="number" ng-model="roundProgressData.label"/> -->
   			</div>
   			<div class="col-md-4 col-xs-4">
-  				<span ng-show="matched" class="fa-stack fa-4x transparant">
+  				<span ng-show="matched == 1" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
   					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'defect'}" class="fa fa-times-circle fa-stack-1x" ng-click="performAction('defect')"></i> 
   				</span>
@@ -150,9 +150,9 @@ The round has ended! You choose for {{ recentOutcome.me }} and your opponent
   		</div>
 
  		<div class="row">
- 		<p ng-show="matched">Chat with your opponent...</p>
+ 		<p ng-show="matched == 1">Chat with your opponent...</p>
  		</div>
-  		 <div ng-show="matched" class="row chat-menu">
+  		 <div ng-show="matched == 1" class="row chat-menu">
   					<i ng-click="sendSignal(1)" class="fa fa-times-circle fa-4x"></i>
   					<i ng-click="sendSignal(2)" class="fa fa-check-circle fa-4x"></i>
   					<i ng-click="sendSignal(3)" class="fa fa-smile-o fa-4x"></i>
@@ -172,7 +172,7 @@ The round has ended! You choose for {{ recentOutcome.me }} and your opponent
   		 	<div class="col-xs-6 col-md-4 pull-left text-left">You </div>
   		 	<div class="col-xs-6 col-md-4 pull-right text-right">Opponent<i class="fa fa-bar-chart lg"></i></div>
   		</div>
-  		  		 	<hr ng-show="matched">
+  		  		 	<hr ng-show="matched == 1">
 
         <div class="container signaloverview">
   		 	<div ng-repeat="signal in signals" class="row message {{ signal.player == 'you' ? 'text-left' : 'text-right'}}">

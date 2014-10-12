@@ -2,16 +2,18 @@
 
 /* Controllers */
 
-function AppCtrl($scope, $q, $rootScope, $timeout) {
+function AppCtrl($scope, $q, $timeout) {
 
   $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
   $scope.signals = [];
   $scope.join = false;
   $scope.authenticated = false;
-  $scope.matched = false;
+  $scope.matched = 0;
   $scope.round = 1;
   $scope.balance = 0;
-  $scope.endOfRound = false;
+  $scope.depositaddress = "http://shop.panasonic.com/images/imageNotFound400.jpg";
+  $scope.endOfRound = 0;
+
   $scope.myAction = null;
 
   var WebSocketHandler = {
@@ -35,10 +37,7 @@ function AppCtrl($scope, $q, $rootScope, $timeout) {
     if (WebSocketHandler.isConnected) {
       // send stuff
       WebSocketHandler.webSocket.send(JSON.stringify(dataToSend));
-      // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
-      //WebSocketHandler.webSocket.onmessage = function(message) {
-      //  receiveCallback(JSON.parse(message.data));
-      //};
+
     } else {
       console.log("Error: Not yet connected.");
     }
@@ -56,6 +55,7 @@ $scope.minAmount = -1000;
 WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(data) {
+    console.log(data);
     if(data.command == "signal") {
       signals.push({'player': opponent, 'signal': data.signal});
     };
@@ -80,6 +80,11 @@ WebSocketHandler.listen(function(data) {
       $scope.balance = data.result;
     };
 
+    if(data.command == 'depositAddress') {
+      $scope.depositaddress = data.result;
+    }
+
+
     if(data.command == "login") {
       if(data.result == 'success') {
         $scope.authenticated = true;
@@ -92,32 +97,19 @@ WebSocketHandler.listen(function(data) {
     if(data.command == "endGame") {
       $scope.round = 0;
       $scope.myAction = null;
-      $scope.matched = false;
+      $scope.matched = 0;
       $scope.round = 0;
     };
 
     if(data.command == "matched") {
       console.log("We match as motherfuckers");
-      $scope.matched = true;
+      $scope.matched = 0;
     };
-
-});
-
-$scope.$watch('matched', function(value) {
-  console.log(value);
-});
-
-$scope.$watch('endOfRound', function(value) {
-  if(value == true) {
-    //$('.endOfRound').alert();
-    //$('.endOfRound').alert('close');
-    $scope.endOfRound = true;
-    console.log("END OF ROUND")
-  } 
+    $scope.$apply();
 });
 
 $scope.$watch('myAction', function(value) {
-  if(value != null && $scope.endOfRound != null) {
+  if(value != null && $scope.endOfRound != false) {
     $scope.waitForOpponent = true; 
     console.log("WACHTEN OP TEGENSPELER")
   } else {
@@ -129,6 +121,11 @@ $scope.$watch('myAction', function(value) {
 
 $(function () {
     $('#info').popover({'html': true});
+
+});
+
+$(function () {
+    $('#manage_balance').popover({'html': true});
 
 });
 
@@ -149,11 +146,17 @@ $scope.initRound = function() {
 
 $scope.getBalance = function() {
   WebSocketHandler.send({'command': 'getBalance'});
+  WebSocketHandler.send({"command" : "getDepositAddress"});
 };
+
 
 $scope.login = function(name, password) {
   WebSocketHandler.send({command: 'login', name: name, password: password});
 };
+
+$scope.logout = function() {
+  location.reload();
+}
 
 $scope.register = function(name, password) {
   WebSocketHandler.send({command: 'register', name: name, password: password});
@@ -190,20 +193,10 @@ $scope.$watch('roundProgressData', function (newValue, oldValue) {
 $scope.counter = maxCount;
 
 $scope.onTimeout = function(){
-    if($scope.counter == 0) {
-        $scope.endOfRound = true;
-        return;
-    }
-  
     $scope.counter--;
-
-      if($scope.counter == 0) {
-        $scope.endOfRound = true;
-      }
-      $scope.endOfRound = false;
-
-      mytimeout = $timeout($scope.onTimeout,1000);
+    mytimeout = $timeout($scope.onTimeout,1000);
 }
+
 var mytimeout = $timeout($scope.onTimeout,1000);
 
 $scope.stop = function() {

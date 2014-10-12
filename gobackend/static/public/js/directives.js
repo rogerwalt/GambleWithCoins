@@ -98,3 +98,17 @@ return {
   }
 }
 }]);
+
+app.directive("matchListener", function ($window) {
+    return {
+        scope: {
+            matched: "="
+        },
+        link: function ($scope, element, attrs) {
+            angular.element($window).on("resize", function () {
+                $scope.ngResize = "Smith";
+                $scope.$apply();
+            });
+        }
+    }
+});

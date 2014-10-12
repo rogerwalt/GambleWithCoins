@@ -344,7 +344,8 @@ footer p {
 .popover p {
   text-transform: none !important;
 }
-.popover {
+
+#info .popover {
   width: 700px !important;
   max-width: none !important;
 }
