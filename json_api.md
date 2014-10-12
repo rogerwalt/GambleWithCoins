@@ -45,6 +45,7 @@ or `{"command" : "login", "result" {"error" : error_message}}`
 player sends`{"command" : "join"}` if he's ready to start a game,
 server replies `{"command" : "matched"}` if an opponent is found. 
 Note that as soon as the game begins, the player is not allowed to use non-game related commands (like getDepositAddress or withdraw)
+server sends `{"command" : "stats", {"result" : {"cooperate" : num_cooperation, "defect" : num_defect}}}` about the opponent
 server sends `{"command" : "startRound"}` if it is ready to receive actions
 
 #### When round is running
