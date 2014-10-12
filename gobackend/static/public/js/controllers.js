@@ -184,7 +184,6 @@ $scope.initRound = function() {
       }
       return currentCallbackId;
     }
->>>>>>> e30c0f8f1944a5bf952ab9ba310aae5b39ba729f
 
 $scope.getBalance = function() {
   WebSocketHandler.send({'command': 'getBalance'}, function(data) {
