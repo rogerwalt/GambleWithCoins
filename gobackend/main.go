@@ -436,6 +436,7 @@ RoundLoop:
 		// check if game ends
 		//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
 		r := rand.Intn(100)
+		log.Println("r:",r)
 		if float64(r) <= 100*p {
 			log.Println("End game: bank wins bets.")
 			masc.UpdateBalance(user1.name, -bet)
