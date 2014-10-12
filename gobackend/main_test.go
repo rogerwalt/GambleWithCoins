@@ -279,6 +279,16 @@ func joinGame(name1, pass1 string, balance1 int,
 		log.Println("Expected matched, got ", msg)
 	}
 
+	// receive "stats" message from server as player 1
+	messageType, msg, err = conn.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "stats" message from server as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
 	return conn, conn2
 }
 
@@ -424,6 +434,16 @@ func game(t *testing.T) {
 	checkError(err)
 
 	// receive "matched" message from server as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "stats" message from server as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "stats" message from server as player 2
 	messageType, msg, err = conn2.ReadMessage()
 	log.Println(string(msg))
 	checkError(err)

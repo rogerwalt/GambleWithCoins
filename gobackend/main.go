@@ -379,6 +379,8 @@ ActionLoop:
 	masc.UpdateBalance(user1.name, p1)
 	masc.UpdateBalance(user2.name, p2)
 
+	masc.AddAction(user1.name, action1)
+	masc.AddAction(user2.name, action2)
 	return
 }
 
@@ -387,6 +389,18 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
+
+	cooperate1, defect1, err1 := masc.GetAction(user1.name)
+	cooperate2, defect2, err2 := masc.GetAction(user2.name)
+	if err1 != nil && err2 != nil {
+	} else {
+		user1.sendChan <- fmt.Sprintf(`{"command": "stats", 
+			"result" : {"cooperate" : %d, "defect" : %d}}`,
+			cooperate2, defect2)
+		user2.sendChan <- fmt.Sprintf(`{"command": "stats", 
+			"result" : {"cooperate" : %d, "defect" : %d}}`,
+			cooperate1, defect1)
+	}
 
 RoundLoop:
 	for {
