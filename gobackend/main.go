@@ -215,7 +215,7 @@ func makeGame(ready chan *User, hubDone chan chan int, close chan bool) func(w h
 				user.sendChan <- b
 			case "getDepositAddress":
 				address, _ := masc.GetDepositAddress(user.name)
-				b := fmt.Sprintf(`{"command" : "depositAddress", "result" : %d}`,
+				b := fmt.Sprintf(`{"command" : "depositAddress", "result" : "%s"}`,
 					address)
 				user.sendChan <- b
 			case "withdraw":
@@ -389,7 +389,6 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
-	log.Println(E / 2)
 
 	cooperate1, defect1, err1 := masc.GetAction(user1.name)
 	cooperate2, defect2, err2 := masc.GetAction(user2.name)
@@ -438,7 +437,7 @@ RoundLoop:
 		// check if game ends
 		//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
 		r := rand.Intn(100)
-		log.Println("r:",r)
+		log.Println("r:", r)
 		if float64(r) <= 100*p {
 			log.Println("End game: bank wins bets.")
 			masc.UpdateBalance(user1.name, -bet)
