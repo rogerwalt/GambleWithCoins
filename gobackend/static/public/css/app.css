@@ -367,3 +367,11 @@ footer p {
 .counter {
   position: absolute; top: 30px; color: white; left: -50%; right: -50%; z-index: 1000; font-weight: bold; font-size: 25px;
 }
+
+.alert {
+  text-align: center;
+  left: -50%;
+  right: -50%;
+  position: absolute;
+  z-index: 10000;
+}

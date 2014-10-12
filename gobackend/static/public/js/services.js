@@ -57,6 +57,7 @@ angular.module('myApp').factory('WebSocketFactory', ['$q', '$rootScope', functio
         time: new Date(),
         cb:defer
       };
+      
       request.callback_id = callbackId;
       console.log('Sending request', request);
       ws.send(JSON.stringify(request));

@@ -40,7 +40,7 @@ var WebSocketHandler = {
 
 function AppCtrl($scope, $q, $rootScope, $timeout) {
 
-var maxCount = 5
+var maxCount = 30
 WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(d) {
@@ -70,16 +70,21 @@ WebSocketHandler.listen(function(d) {
 
 $scope.$watch('endOfRound', function(value) {
   if(value == true) {
-    $('.endOfRound').alert();
+    //$('.endOfRound').alert();
+    //$('.endOfRound').alert('close');
+    $scope.endOfRound = true;
     console.log("END OF ROUND")
-  }
+  } 
 });
 
 $scope.$watch('myAction', function(value) {
   if(value != null && $scope.endOfRound != null) {
-    $('.waitForOpponent').alert();
+    $scope.waitForOpponent = true; 
     console.log("WACHTEN OP TEGENSPELER")
+  } else {
+    $scope.waitForOpponent = false;
   }
+
 });
 
 

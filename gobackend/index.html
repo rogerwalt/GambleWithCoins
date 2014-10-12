@@ -80,8 +80,19 @@
   			<h2 ng-show="join">Round 1</h2>
         <h2 ng-show="!join && !authenticated">Sign in and start playing!</h2>
         <h2 ng-show="!join && authenticated">Click on join to start your first match</h2>
-
+<!--
+<div class="alert alert-danger endOfRound" role="alert">
+        The round has ended! You choose for {{ myAction }} and your opponent
+        played {{}}. This gives you a pay-off of {{}} and your opponent got {{}}.</p>
         <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        </div>
+
+        <div class="alert alert-danger waitForOpponent" role="alert">
+          <p style="width: 100%; text-align: center"><span style="position: relative"><i class="fa fa-spinner fa-spin fa-2x"></i></span></p>
+       <p style="font-size: 15px">Waiting for opponent to chose... <p>
+       -->
+        <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        </div>
 
   		</div>
   	</div>
@@ -112,8 +123,18 @@
           <p>Selecting an opponent...</p>
 </div>
 
-          <div class="counter">{{ counter }}</div>
-  				<div ng-show="matched && join" ang:round:progress ng-model="roundProgresData.label"
+          <div class="awaiting" ng-show="waitForOpponent && !endOfRound">
+                    <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
+          <p>Waiting for opponent to choose...</p>
+</div>
+
+          <div class="awaiting" ng-show="endOfRound">
+The round has ended! You choose for {{ recentOutcome.me }} and your opponent
+        played {{ recentOutcome.other }}. This gives you a pay-off of {{ recentBalanceDifference.me }} and your opponent got {{ recentBalanceDifference.other}}.</p>
+        </div>
+
+          <div ng-show="matched && join && !endOfRound && !waitForOpponent" class="counter">{{ counter }}</div>
+  				<div ng-show="matched && join && !endOfRound && !waitForOpponent" ang:round:progress ng-model="roundProgresData.label"
           data-round-progress-model="roundProgressData"
   				data-round-progress-width="85"
   				data-round-progress-height="100"
