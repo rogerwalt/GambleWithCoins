@@ -21,18 +21,18 @@ var WebSocketHandler = {
     if (WebSocketHandler.isConnected) {
       // send stuff
       WebSocketHandler.webSocket.send(JSON.stringify(dataToSend));
-      // make sure the receiveCallback is a function
-      //if (typeof callback === "function") {
-        // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
-        WebSocketHandler.webSocket.onmessage = function(message) {
-          receiveCallback(JSON.parse(message.data));
-        };
-      //} else {
-        //console.log("Error: Function is required for callback.");
-      //}
+      // set new callback on ws.onmessage -> receiveCallbackFunctionPointer
+      WebSocketHandler.webSocket.onmessage = function(message) {
+        receiveCallback(JSON.parse(message.data));
+      };
     } else {
       console.log("Error: Not yet connected.");
     }
+  },
+  listen: function(receiveCallback) {
+    WebSocketHandler.webSocket.onmessage = function(message) {
+      receiveCallback(JSON.parse(message.data));
+    };
   }
 };
 
@@ -169,7 +169,6 @@ $scope.sendRequestOnOpen = function(request) {
 $scope.$watch('roundProgressData', function (newValue, oldValue) {
   newValue.percentage = newValue.label / 100;
 }, true);
-
 
 /*
 socket.on('')
