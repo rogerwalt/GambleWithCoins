@@ -106,9 +106,6 @@ $scope.authenticated = false;
 $scope.matched = false;
 $scope.round = 1;
 $scope.balance = 0;
-$scope.authenticated = true;
-$scope.matched = true;
-$scope.join = true;
 $scope.endOfRound = false;
 $scope.myAction = null;
 
