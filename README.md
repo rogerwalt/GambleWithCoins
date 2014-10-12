@@ -1,6 +1,8 @@
 GambleWithCoins
 ===============
 
+Working example: http://146.185.186.230:8080/
+
 Prisoner's Dilemma
 ---
 A standard prisoner's dilemma looks like this (example from wikipedia):
