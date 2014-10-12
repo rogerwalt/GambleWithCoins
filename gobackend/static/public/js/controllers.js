@@ -112,6 +112,7 @@ WebSocketHandler.listen(function(data) {
     if(data.command == "matched") {
       console.log("We match as motherfuckers");
       $scope.matched = 1;
+      $scope.counter = minAmount;
     };
   });
 
@@ -202,7 +203,9 @@ $scope.$watch('roundProgressData', function (newValue, oldValue) {
 $scope.counter = maxCount;
 
 $scope.onTimeout = function(){
-    $scope.counter--;
+    if($scope.counter > 0) {
+      $scope.counter--;
+    }
     mytimeout = $timeout($scope.onTimeout,1000);
 }
 

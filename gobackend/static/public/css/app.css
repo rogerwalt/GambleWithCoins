@@ -376,3 +376,37 @@ footer p {
   position: absolute;
   z-index: 10000;
 }
+
+
+
+
+
+.show-animation {
+  box-sizing:border-box;
+  opacity:0;
+}
+
+.show-animation.ng-enter-stagger,
+.show-animation.ng-leave-stagger,
+.show-animation.ng-move-stagger {
+  /* 200ms will be applied between each sucessive enter operation */ 
+  -webkit-transition-delay:1s;
+  transition-delay:1s;
+}
+
+.show-animation.ng-enter,
+.show-animation.ng-leave,
+.show-animation.ng-move {
+  -webkit-transition:1s linear all;
+  transition:1s linear all;
+}
+
+.show-animation.ng-leave.ng-leave-active,
+.show-animation.ng-enter,
+.show-animation.ng-move {
+  -webkit-transition:1s linear all;
+  transition:1s linear all;
+  opacity: 1;
+}
+
+
