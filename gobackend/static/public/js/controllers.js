@@ -296,3 +296,4 @@ $scope.$watchCollection('signals', function() {
 });
 
 }
+}
