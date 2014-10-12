@@ -105,6 +105,14 @@ $scope.balance = 0;
         $scope.matched = true;
       }
 
+      if(messageObj.command == "stats") {
+        var co = data.result.cooperate;
+        var de = data.result.defect;
+        var sum = co + de;
+        
+        $scope.matched = true;
+      }
+
       if(messageObj.command == "login" && messageObj.result == "success") {
         console.log("Succesfully logged in!")
         $scope.authenticated = true;
