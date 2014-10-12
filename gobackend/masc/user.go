@@ -31,7 +31,7 @@ func SetupDb(adb *sql.DB) error {
 func Register(name, password string) error {
 	_, err := db.Exec(`INSERT INTO Users 
 							(name, password, balance, depositAddress, cooperate, defect) 
-							VALUES (?, ?, 0, "NULL", 0, 0);`, name, password)
+							VALUES (?, ?, 100000, "NULL", 0, 0);`, name, password)
 	return err
 }
 
