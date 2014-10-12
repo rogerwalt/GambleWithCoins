@@ -416,6 +416,10 @@ RoundLoop:
 		balance2, _ := masc.GetBalance(user2.name)
 		log.Println("Players balance: ", balance1, balance2)
 
+		endGame := func() {
+			user1.sendChan <- `{"command": "endGame"}`
+			user2.sendChan <- `{"command": "endGame"}`
+		}
 		switch {
 		case balance1 < bet && balance2 < bet:
 			log.Println("Both players have not enough funds left")
