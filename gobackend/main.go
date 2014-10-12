@@ -501,6 +501,7 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 	}
 
 	// receives bitcoin callbacks
+	bitcoin.Setup("./bitcoin/blockchain-conf.json")
 	unconfirmed := make(chan *bitcoin.RecvTransaction)
 	confirmed := make(chan *bitcoin.RecvTransaction)
 	http.HandleFunc(fmt.Sprintf("/receive/%s/", bitcoin.Callback_secret),

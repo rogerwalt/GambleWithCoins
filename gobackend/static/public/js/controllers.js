@@ -41,7 +41,7 @@ WebSocketHandler.connect({});
 
 /* Controllers */
 
-function AppCtrl($scope, $q, $rootScope) {
+function AppCtrl($scope, $q, $rootScope, $timeout) {
 
 $(function () {
     $('#info').popover({'html': true});
@@ -61,9 +61,11 @@ $scope.authenticated = false;
 $scope.matched = false;
 $scope.round = 1;
 $scope.balance = 0;
-//$scope.authenticated = true;
-//$scope.matched = true;
-//$scope.join = true;
+$scope.authenticated = true;
+$scope.matched = true;
+$scope.join = true;
+$scope.endOfRound = false;
+$scope.myAction = null;
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -170,6 +172,14 @@ $scope.joinGame = function() {
   $scope.join = true;
 }
 
+$scope.performAction = function(action) {
+  if($scope.myAction != null) {
+    return;
+  }
+ $scope.myAction = action;
+  WebSocketHandler.send({'command': 'action', 'action': action});
+}
+
 $scope.sendRequestOnOpen = function(request) {
   return sendRequest(request);
 }
@@ -178,18 +188,36 @@ $scope.$watch('roundProgressData', function (newValue, oldValue) {
   newValue.percentage = newValue.label / 100;
 }, true);
 
+// The counter
+$scope.counter = 30;
+
+$scope.onTimeout = function(){
+      if($scope.counter == 0) {
+        return;
+      }
+      $scope.counter--;
 /*
 socket.on('')
+>>>>>>> a1cb0b14542bb12ac78da0aa6a6a871612932776
 
-// Initiate the game (set balance for user)
-socket.on('init', function (data) {
-  socket.emit('get:balance')
-});
+      if($scope.counter == 0) {
+        $scope.endOfRound = true;
+      }
+      $scope.endOfRound = false;
 
-// The user gets the requested balance of the server
-socket.on('balance', function (data) {
-  $scope.balance = data.result;
-});
+      mytimeout = $timeout($scope.onTimeout,1000);
+}
+
+var mytimeout = $timeout($scope.onTimeout,1000);
+
+$scope.stop = function() {
+   $timeout.cancel(mytimeout);
+ }
+
+
+
+/*
+socket.on('')
 
 // The user gets the requested depositaddress of the server
 socket.on('deposit:address', function (data) {
