@@ -36,12 +36,52 @@ var WebSocketHandler = {
   }
 };
 
-WebSocketHandler.connect({});
-
-
 /* Controllers */
 
 function AppCtrl($scope, $q, $rootScope, $timeout) {
+
+var maxCount = 5
+WebSocketHandler.connect({});
+
+WebSocketHandler.listen(function(d) {
+    if(d.data.command == "signal") {
+      signals.push({'player': opponent, 'signal': data.signal});
+    }
+
+    if(d.data.command == "endRound") {
+      $scope.myAction = null;
+      $scope.recentOutcome = data.outcome;
+      $scope.recentBalanceDifference = data.balanceDifference;
+      $scope.round += 1;
+      $scope.initRound();
+    }
+
+    if(d.data.command == "endGame") {
+      $scope.round = 0;
+      $scope.myAction = null;
+      $scope.matched = false;
+      $scope.round = 0;
+    }
+
+    if(d.data.command == "matched") {
+      $scope.matched = true;
+    }
+});
+
+$scope.$watch('endOfRound', function(value) {
+  if(value == true) {
+    $('.endOfRound').alert();
+    console.log("END OF ROUND")
+  }
+});
+
+$scope.$watch('myAction', function(value) {
+  if(value != null && $scope.endOfRound != null) {
+    $('.waitForOpponent').alert();
+    console.log("WACHTEN OP TEGENSPELER")
+  }
+});
+
 
 $(function () {
     $('#info').popover({'html': true});
@@ -66,6 +106,14 @@ $scope.matched = true;
 $scope.join = true;
 $scope.endOfRound = false;
 $scope.myAction = null;
+
+$scope.initRound = function() {
+    $scope.getBalance();
+    $scope.endOfRound = false;
+    $scope.counter = maxCount;
+    $scope.myAction = null;
+    $scope.signals = []
+}
 
     // Keep all pending requests here until they get responses
     var callbacks = {};
@@ -104,6 +152,14 @@ $scope.myAction = null;
       }
 
       if(messageObj.command == "matched") {
+        $scope.matched = true;
+      }
+
+      if(messageObj.command == "stats") {
+        var co = data.result.cooperate;
+        var de = data.result.defect;
+        var sum = co + de;
+        
         $scope.matched = true;
       }
 
@@ -181,16 +237,15 @@ $scope.$watch('roundProgressData', function (newValue, oldValue) {
 }, true);
 
 // The counter
-$scope.counter = 30;
+$scope.counter = maxCount;
 
 $scope.onTimeout = function(){
-      if($scope.counter == 0) {
+    if($scope.counter == 0) {
+        $scope.endOfRound = true;
         return;
-      }
-      $scope.counter--;
-/*
-socket.on('')
->>>>>>> a1cb0b14542bb12ac78da0aa6a6a871612932776
+    }
+  
+    $scope.counter--;
 
       if($scope.counter == 0) {
         $scope.endOfRound = true;
@@ -199,36 +254,15 @@ socket.on('')
 
       mytimeout = $timeout($scope.onTimeout,1000);
 }
-
 var mytimeout = $timeout($scope.onTimeout,1000);
 
 $scope.stop = function() {
    $timeout.cancel(mytimeout);
- }
+}
 
 
 
 /*
-socket.on('')
-
-// The user gets the requested depositaddress of the server
-socket.on('deposit:address', function (data) {
-  $scope.depositAddress = data.result;
-});
-
-// The user recieves a message from the other user
-socket.on('send:signal', function (data) {
-  $scope.signals.push({
-    player: 'oponent',
-    signal: data.signal
-  });
-});
-
-// Let the games begin
-socket.on('matched', function (data) {
-  $scope.matched = true;
-});
-
 // The user gets a confirmation/error on withdraw
 socket.on('withdraw', function (data) {
   $scope.withdraw = data.result;
@@ -247,29 +281,6 @@ socket.on('outcome', function (data) {
 $scope.getDepositAddress = function() {
   socket.emit('get:deposit:address')
 }
-
-// The player has made a decision 
-$scope.sendAction = function(action) {
-  socket.emit('command:action', {
-     action: action
-  });
-
-  console.log('Action: ' + action)
-  console.log('Join: ' + $scope.join)
-  console.log('Matched: ' + $scope.matched)
-};
-
-// The player sends a signal to the other player
-
-$scope.countDown = function(seconds) {
-  $scope.roundProgressData.percentage = 0
-  $scope.roundProgressData.label = seconds
-  for (var i = 1; i <= seconds; i++) {
-    $scope.roundProgressData.percentage += 100.0/seconds ;
-    $scope.roundProgressData.label = seconds - i;
-
-    console.log($scope.roundProgressData)
-  }
 }
 
 */
@@ -280,15 +291,6 @@ $scope.sendSignal = function(signal) {
     console.log(data);
   });
 }
-
-$scope.$watch(function() {
-  return $('.popover.fade.in').attr('opacity'); 
-}, function(newValue){
-  if (newValue == 0) {
-    console.log('dissapear')
-  }
-
-});
 
 $scope.$watchCollection('signals', function() {
   console.log($('div.signaloverview').scrolltop);
