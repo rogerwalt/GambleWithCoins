@@ -363,15 +363,15 @@ ActionLoop:
 	p1, p2 := masc.PrisonersDilemma(action1, action2, b, E)
 
 	user1.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
-						"outcome" : {"me" : %s, "other" : %s}, 
-						"balanceDifference" : {"me" : %d, 
-											   "other" : %d}}`,
+						"outcome" : {"me" : "%s", "other" : "%s"}, 
+						"balanceDifference" : {"me" : "%d", 
+											   "other" : "%d"}}`,
 		action1, action2, p1, p2)
 
 	user2.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
-						"outcome" : {"me" : %s, "other" : %s}, 
-						"balanceDifference" : {"me" : %d, 
-											   "other" : %d}}`,
+						"outcome" : {"me" : "%s", "other" : "%s"}, 
+						"balanceDifference" : {"me" : "%d", 
+											   "other" : "%d"}}`,
 		action2, action1, p2, p1)
 	log.Println("Sent payoffs", p1, p2)
 
@@ -389,6 +389,7 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
+	log.Println(E / 2)
 
 	cooperate1, defect1, err1 := masc.GetAction(user1.name)
 	cooperate2, defect2, err2 := masc.GetAction(user2.name)
@@ -402,8 +403,12 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 			cooperate1, defect1)
 	}
 
+	//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
+	rounds := rand.Intn(4)
+	rounds = rounds + 1
+
 RoundLoop:
-	for {
+	for i := 0; i < rounds; i++ {
 		log.Println("New game round")
 
 		// check if players have enough funds to play a round
@@ -418,24 +423,22 @@ RoundLoop:
 		switch {
 		case balance1 < bet && balance2 < bet:
 			log.Println("Both players have not enough funds left")
-			endGame()
 			break RoundLoop
 		case balance1 < bet:
 			// player 2 gets the remaining money and the game ends
 			log.Println("Player 1 does not have enough funds left")
-			endGame()
 			break RoundLoop
 		case balance2 < bet:
 			//player 1 gets the remaining money and the game ends
 			log.Println("Player 2 does not have enough funds left")
-			endGame()
 			break RoundLoop
 		}
-
 		// players have sufficient funds for the next round
+
 		// check if game ends
 		//TODO: TODO: TODO: TODO: TODO: TODO: use crypto secure rng
 		r := rand.Intn(100)
+		log.Println("r:",r)
 		if float64(r) <= 100*p {
 			log.Println("End game: bank wins bets.")
 			masc.UpdateBalance(user1.name, -bet)
@@ -448,6 +451,12 @@ RoundLoop:
 		handleGameRound(user1, user2, bet, E)
 	}
 
+	log.Println("End game: bank wins bets.")
+	masc.UpdateBalance(user1.name, -bet)
+	masc.UpdateBalance(user2.name, -bet)
+
+	user1.sendChan <- `{"command": "endGame"}`
+	user2.sendChan <- `{"command": "endGame"}`
 	done1 <- 1
 	done2 <- 1
 
