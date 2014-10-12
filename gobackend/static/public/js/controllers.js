@@ -45,7 +45,11 @@ function AppCtrl($scope, $q, $timeout) {
 
   listen: function(receiveCallback) {
     WebSocketHandler.webSocket.onmessage = function(message) {
-      receiveCallback(JSON.parse(message.data));
+      try {
+        receiveCallback(JSON.parse(message.data));
+      } catch (err){
+        location.load();
+      }
     };
   }
 };
@@ -56,6 +60,8 @@ WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(data) {
     console.log(data);
+
+    $scope.$apply(function() {
     if(data.command == "signal") {
       signals.push({'player': opponent, 'signal': data.signal});
     };
@@ -99,13 +105,16 @@ WebSocketHandler.listen(function(data) {
       $scope.myAction = null;
       $scope.matched = 0;
       $scope.round = 0;
+      $scope.join = false;
+      $scope.endGame = 1;
     };
 
     if(data.command == "matched") {
       console.log("We match as motherfuckers");
-      $scope.matched = 0;
+      $scope.matched = 1;
     };
-    $scope.$apply();
+  });
+
 });
 
 $scope.$watch('myAction', function(value) {

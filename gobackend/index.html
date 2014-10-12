@@ -31,6 +31,7 @@
   <script src="static/public/js/filters.js"></script>
   <script src="static/public/js/directives.js"></script>
   <script src="static/public/js/tooltip.min.js"></script>
+  <script src="static/public/js/qrcode.js"></script>
 
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -59,7 +60,7 @@
   				<form class="navbar-form navbar-right" role="form">
 
   					<button ng-show="authenticated" class="btn bnt-mainmenu" ng-click="logout()">Logout</button>
-  					<button  data-original-title="Your personal QR CODE" data-container="body" data-toggle="popover" data-placement="bottom" data-content="<img src='{{depositaddress}}' style='width: 200px'><p>You can easily use this QR code to update your balance</p>" ng-show="authenticated" id="manage_balance" class="btn bnt-mainmenu">Manage balance</button>
+  					<button  data-original-title="Your personal QR CODE" data-container="body" data-toggle="popover" data-placement="bottom" data-content="<img src='/static/public/img/qr_code_sample_image_zip.gif' style='width: 300px'><p>You can easily use this QR code to update your balance</p>" ng-show="authenticated" id="manage_balance" class="btn bnt-mainmenu">Manage balance</button>
   				</form>
   			</div><!--/.navbar-collapse -->
   		</div>
@@ -92,7 +93,7 @@
   			<div class="col-md-4 col-xs-4">
   			    <span ng-show="matched == 1" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
-  					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'cooperate'}" class="fa fa-check-circle fa-stack-1x" ng-click="performAction('cooperate')"></i>
+  					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'coorperate'}" class="fa fa-check-circle fa-stack-1x" ng-click="performAction('coorperate')"></i>
   				</span>
   			</div>
 
