@@ -58,8 +58,8 @@
   			<div class="navbar-collapse collapse">
   				<form class="navbar-form navbar-right" role="form">
 
-  					<button class="btn bnt-mainmenu">Logout</button>
-  					<button class="btn bnt-mainmenu">Manage balance</button>
+  					<button ng-show="authenticated" class="btn bnt-mainmenu">Logout</button>
+  					<button ng-show="authenticated" class="btn bnt-mainmenu">Manage balance</button>
   				</form>
   			</div><!--/.navbar-collapse -->
   		</div>
@@ -105,18 +105,22 @@
             </form> 
           </div>
 
- 				  <button class="round-button" ng-show="join == false && authenticated == true" ng-click="joinGame()">JOIN</button>
+ 				  <button class="round-button" ng-show="join == false && authenticated == true && balance >= minAmount" ng-click="joinGame()">JOIN</button>
           <div class="awaiting" ng-show="!matched && join == true">
                     <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
           <p>Selecting an opponent...</p>
 </div>
 
-          <div class="awaiting" ng-show="waitForOpponent && !endOfRound">
+          <div class="awaiting" ng-show="waitForOpponent && !endOfRound && matched">
                     <span><i class="fa fa-spinner fa-spin fa-2x"></i></span>
           <p>Waiting for opponent to choose...</p>
 </div>
 
-          <div class="awaiting" ng-show="endOfRound">
+          <div class="awaiting" ng-show="authenticated && balance < minAmount">
+          <p>You don't have enough funds to play. Please increase your balance at the balance managing section.</p>
+</div>
+
+          <div class="awaiting" ng-show="endOfRound && matched">
 The round has ended! You choose for {{ recentOutcome.me }} and your opponent
         played {{ recentOutcome.other }}. This gives you a pay-off of {{ recentBalanceDifference.me }} and your opponent got {{ recentBalanceDifference.other}}.</p>
         </div>
