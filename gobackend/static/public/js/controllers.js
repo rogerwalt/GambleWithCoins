@@ -40,7 +40,8 @@ var WebSocketHandler = {
 
 function AppCtrl($scope, $q, $rootScope, $timeout) {
 
-var maxCount = 30
+var maxCount = 30;
+$scope.minAmount = 1000;
 WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(d) {
@@ -202,6 +203,8 @@ $scope.login = function(name, password) {
     if(data.result == 'success') {
       $scope.authenticated = true;
       $scope.getBalance();
+    } else {
+      location.reload();
     }
   });
 
@@ -218,6 +221,11 @@ $scope.register = function(name, password) {
 
 // Player indicates he wants to start a new game
 $scope.joinGame = function() {
+
+  if($scope.balance < $scope.minAmount) {
+    return;
+  }
+
   WebSocketHandler.send({'command': 'join'});
   $scope.join = true;
 }
