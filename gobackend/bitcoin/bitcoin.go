@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-var password, guid, callback_secret string
+var password, guid, Callback_secret string
 
 // reads global password and guid variables from file
 func Setup(confname string) error {
@@ -23,7 +23,7 @@ func Setup(confname string) error {
 	json.Unmarshal(txt, &m)
 	password = m["password"].(string)
 	guid = m["guid"].(string)
-	callback_secret = m["callback_secret"].(string)
+	Callback_secret = m["callback_secret"].(string)
 
 	return nil
 }

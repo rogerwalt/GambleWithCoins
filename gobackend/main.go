@@ -15,6 +15,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rogerwalt/GambleWithCoins/gobackend/bitcoin"
 
 	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
 
@@ -468,11 +469,14 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 
 	go Hub(ready, hubDone)
 
+	// index.html
 	http.HandleFunc("/", staticHandler)
+	// static files like js
 	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 	})
 
+	// websocket endpoint
 	http.HandleFunc("/play/", makeGame(ready, hubDone, close))
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
@@ -481,6 +485,13 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// receives bitcoin callbacks
+	unconfirmed := make(chan *bitcoin.RecvTransaction)
+	confirmed := make(chan *bitcoin.RecvTransaction)
+	http.HandleFunc(fmt.Sprintf("/receive/%s/", bitcoin.Callback_secret),
+		bitcoin.ReceiveCallback(unconfirmed, confirmed))
+	go masc.InsertIncomingTransactionsInDb(confirmed)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	checkError(err)
