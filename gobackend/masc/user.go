@@ -61,6 +61,18 @@ func AddAction(name, action string) bool {
 	return true
 }
 
+func GetAction(name string) (int, int, error) {
+	var cooperate int
+	row := db.QueryRow(`SELECT cooperate FROM Users WHERE name = ?`, name)
+	err := row.Scan(&cooperate)
+
+	var defect int
+	row = db.QueryRow(`SELECT defect FROM Users WHERE name = ?`, name)
+	err = row.Scan(&defect)
+
+	return cooperate, defect, err
+}
+
 //TODO: secure against race conditions
 func GetBalance(name string) (int, error) {
 	var balanceStr string

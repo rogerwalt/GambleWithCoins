@@ -15,6 +15,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rogerwalt/GambleWithCoins/gobackend/bitcoin"
 
 	"github.com/rogerwalt/GambleWithCoins/gobackend/masc"
 
@@ -335,6 +336,8 @@ ActionLoop:
 			action2 = receiveAction(msg, user1.sendChan, chose, 2, action2)
 		case <-timer.C:
 			log.Println("Time is up")
+			user1.sendChan <- fmt.Sprintf(`{ "command": "timerEnd"}`)
+			user2.sendChan <- fmt.Sprintf(`{ "command": "timerEnd"}`)
 			break ActionLoop
 		case <-ready:
 			log.Println("Both Players have chosen their actions")
@@ -376,6 +379,8 @@ ActionLoop:
 	masc.UpdateBalance(user1.name, p1)
 	masc.UpdateBalance(user2.name, p2)
 
+	masc.AddAction(user1.name, action1)
+	masc.AddAction(user2.name, action2)
 	return
 }
 
@@ -384,6 +389,18 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
+
+	cooperate1, defect1, err1 := masc.GetAction(user1.name)
+	cooperate2, defect2, err2 := masc.GetAction(user2.name)
+	if err1 != nil && err2 != nil {
+	} else {
+		user1.sendChan <- fmt.Sprintf(`{"command": "stats", 
+			"result" : {"cooperate" : %d, "defect" : %d}}`,
+			cooperate2, defect2)
+		user2.sendChan <- fmt.Sprintf(`{"command": "stats", 
+			"result" : {"cooperate" : %d, "defect" : %d}}`,
+			cooperate1, defect1)
+	}
 
 RoundLoop:
 	for {
@@ -466,11 +483,14 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 
 	go Hub(ready, hubDone)
 
+	// index.html
 	http.HandleFunc("/", staticHandler)
+	// static files like js
 	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 	})
 
+	// websocket endpoint
 	http.HandleFunc("/play/", makeGame(ready, hubDone, close))
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
@@ -479,6 +499,13 @@ func start(dbName string, port int, serverClose chan int, seed int64) {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// receives bitcoin callbacks
+	unconfirmed := make(chan *bitcoin.RecvTransaction)
+	confirmed := make(chan *bitcoin.RecvTransaction)
+	http.HandleFunc(fmt.Sprintf("/receive/%s/", bitcoin.Callback_secret),
+		bitcoin.ReceiveCallback(unconfirmed, confirmed))
+	go masc.InsertIncomingTransactionsInDb(confirmed)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	checkError(err)

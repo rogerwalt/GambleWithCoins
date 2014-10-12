@@ -33,6 +33,7 @@ func TestGame(t *testing.T) {
 	loginAndRegister(t)
 	testDatabase(t)
 	game(t)
+	gameSignaling(t)
 	//gameSlow(t)
 
 	serverClose <- 1
@@ -278,7 +279,81 @@ func joinGame(name1, pass1 string, balance1 int,
 		log.Println("Expected matched, got ", msg)
 	}
 
+	// receive "stats" message from server as player 1
+	messageType, msg, err = conn.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "stats" message from server as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
 	return conn, conn2
+}
+
+func gameRoundSignaling(conn1, conn2 *websocket.Conn) {
+	// receive start round as player 1
+	messageType, msg, err := conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive start round as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send "cooperate" command as player 1
+	b := []byte(`{"command": "action", "action" : "cooperate"}`)
+	err = conn1.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send a signal command as player 1
+	signal := "C"
+	b = []byte(fmt.Sprintf(`{"command": "signal", "signal" : "%s"}`, signal))
+	err = conn1.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send a signal command as player 2
+	signal = "D"
+	b = []byte(fmt.Sprintf(`{"command": "signal", "signal" : "%s"}`, signal))
+	err = conn2.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// send "defect" command as player 2
+	b = []byte(`{"command": "action", "action": "defect"}`)
+	err = conn2.WriteMessage(messageType, b)
+	checkError(err)
+
+	// receive notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
+
+	// receive game notification as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	checkError(err)
+	log.Println(string(msg))
 }
 
 func gameRound(conn1, conn2 *websocket.Conn) {
@@ -325,7 +400,7 @@ func gameRound(conn1, conn2 *websocket.Conn) {
 
 func game(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
-	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
+	conn1, conn2 := joinGame("foo1", "bar1", 100000, "foo2", "bar2", 100000)
 
 	for i := 0; i < 3; i++ {
 		gameRound(conn1, conn2)
@@ -363,6 +438,16 @@ func game(t *testing.T) {
 	log.Println(string(msg))
 	checkError(err)
 
+	// receive "stats" message from server as player 1
+	messageType, msg, err = conn1.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
+	// receive "stats" message from server as player 2
+	messageType, msg, err = conn2.ReadMessage()
+	log.Println(string(msg))
+	checkError(err)
+
 	for i := 0; i < 6; i++ {
 		gameRound(conn1, conn2)
 	}
@@ -382,7 +467,7 @@ func game(t *testing.T) {
 
 func gameSlow(t *testing.T) {
 	//var conn1, conn2 *websocket.Conn
-	conn1, conn2 := joinGame("foo1", "bar1", 10000, "foo2", "bar2", 10000)
+	conn1, conn2 := joinGame("foo1", "bar1", 100000, "foo2", "bar2", 100000)
 
 	// receive start round as player 1
 	messageType, msg, err := conn1.ReadMessage()
@@ -404,7 +489,7 @@ func gameSlow(t *testing.T) {
 	checkError(err)
 	log.Println(string(msg))
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(40 * time.Second)
 	// send "defect" command as player 2
 	b = []byte(`{"command": "action", "action": "defect"}`)
 	err = conn2.WriteMessage(messageType, b)
@@ -427,4 +512,12 @@ func gameSlow(t *testing.T) {
 
 	log.Println("Test: ----- game() ended -----")
 
+}
+
+func gameSignaling(t *testing.T) {
+	conn1, conn2 := joinGame("foo1", "bar1", 100000, "foo2", "bar2", 100000)
+
+	for i := 0; i < 1; i++ {
+		gameRoundSignaling(conn1, conn2)
+	}
 }
