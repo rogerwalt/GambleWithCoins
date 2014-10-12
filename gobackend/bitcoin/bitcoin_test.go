@@ -27,16 +27,16 @@ func TestNewAddress(t *testing.T) {
 
 	unconfirmed := make(chan *RecvTransaction)
 	confirmed := make(chan *RecvTransaction)
-	http.HandleFunc(fmt.Sprintf("/receive/%s/", callback_secret),
+	http.HandleFunc(fmt.Sprintf("/receive/%s/", Callback_secret),
 		ReceiveCallback(unconfirmed, confirmed))
 	go http.ListenAndServe(":8080", nil)
 	for {
 		select {
 		case o := <-unconfirmed:
-			fmt.Println("unconfirmed", o.txhash, o.address, o.amount)
+			fmt.Println("unconfirmed", o.Txhash, o.Address, o.Amount)
 
 		case o := <-confirmed:
-			fmt.Println("confirmed", o.txhash, o.address, o.amount)
+			fmt.Println("confirmed", o.Txhash, o.Address, o.Amount)
 		}
 	}
 }

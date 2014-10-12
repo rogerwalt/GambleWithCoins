@@ -115,6 +115,77 @@ $scope.initRound = function() {
     $scope.signals = []
 }
 
+    // Keep all pending requests here until they get responses
+    var callbacks = {};
+
+    // Create a unique callback ID to map requests to responses
+    var currentCallbackId = 0;
+
+    // Create our websocket object with the address to the websocket
+    var ws = new WebSocket("ws://localhost:8080/play/");
+  
+    ws.onmessage = function(message) {
+        console.log(message.data);
+        listener(JSON.parse(message.data));
+    };
+
+    function sendRequest(request) {
+      var defer = $q.defer();
+      var callbackId = getCallbackId();
+      callbacks[callbackId] = {
+        time: new Date(),
+        cb:defer
+      };
+
+      request.callback_id = callbackId;
+      console.log('Sending request', request);
+      ws.send(JSON.stringify(request));
+      return defer.promise;
+    }
+
+    function listener(data) {
+      var messageObj = data;
+
+      console.log("Received data from websocket: ", messageObj);
+      if (typeof messageObj.result.errorCode != "undefined") {
+        console.log('Error: ' + messageObj.result.errorMsg);
+      }
+
+      if(messageObj.command == "matched") {
+        $scope.matched = true;
+      }
+
+      if(messageObj.command == "stats") {
+        var co = data.result.cooperate;
+        var de = data.result.defect;
+        var sum = co + de;
+        
+        $scope.matched = true;
+      }
+
+      if(messageObj.command == "login" && messageObj.result == "success") {
+        console.log("Succesfully logged in!")
+        $scope.authenticated = true;
+        console.log($scope.authenticated)
+      }
+
+      // If an object exists with callback_id in our callbacks object, resolve it
+      if(callbacks.hasOwnProperty(messageObj.callback_id)) {
+        console.log(callbacks[messageObj.callback_id]);
+        $rootScope.$apply(callbacks[messageObj.callback_id].cb.resolve(messageObj.data));
+        delete callbacks[messageObj.callbackID];
+      }
+    }
+    // This creates a new callback ID for a request
+    function getCallbackId() {
+      currentCallbackId += 1;
+      if(currentCallbackId > 10000) {
+        currentCallbackId = 0;
+      }
+      return currentCallbackId;
+    }
+>>>>>>> e30c0f8f1944a5bf952ab9ba310aae5b39ba729f
+
 $scope.getBalance = function() {
   WebSocketHandler.send({'command': 'getBalance'}, function(data) {
     if(data.command == 'balance') {
