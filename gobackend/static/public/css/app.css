@@ -108,6 +108,20 @@ body {
 
 .transparant i:hover.fa-stack-1x {
   cursor:pointer;
+  z-index: 1000;
+}
+
+.transparant i.fa-stack-1x.nonactive{
+  cursor: auto;
+  color: #a3384b;
+}
+
+.transparant i.fa-stack-1x.current{
+  color: #fff;
+}
+
+.transparant i.fa-stack-1x.nonactive{
+  cursor: auto;
 }
 
 .transparant i.fa-stack-2x {
@@ -349,3 +363,7 @@ footer p {
    text-decoration:none;
    color:white;
    }
+
+.counter {
+  position: absolute; top: 30px; color: white; left: -50%; right: -50%; z-index: 1000; font-weight: bold; font-size: 25px;
+}

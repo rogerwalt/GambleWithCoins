@@ -55,11 +55,11 @@ app.directive('angRoundProgress', [function () {
           ctx.stroke();
 
           // The inner number
-          ctx.font = labelFont;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = labelColor;
-          ctx.fillText(newValue.label, x, y);
+          //ctx.font = labelFont;
+          //ctx.textAlign = 'center';
+          //ctx.textBaseline = 'middle';
+          //ctx.fillStyle = labelColor;
+          //ctx.fillText(newValue.label, x, y);
 
           // The "foreground" circle
           var startAngle = - (Math.PI / 2);
