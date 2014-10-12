@@ -363,15 +363,15 @@ ActionLoop:
 	p1, p2 := masc.PrisonersDilemma(action1, action2, b, E)
 
 	user1.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
-						"outcome" : {"me" : %s, "other" : %s}, 
-						"balanceDifference" : {"me" : %d, 
-											   "other" : %d}}`,
+						"outcome" : {"me" : "%s", "other" : "%s"}, 
+						"balanceDifference" : {"me" : "%d", 
+											   "other" : "%d"}}`,
 		action1, action2, p1, p2)
 
 	user2.sendChan <- fmt.Sprintf(`{ "command": "endRound", 
-						"outcome" : {"me" : %s, "other" : %s}, 
-						"balanceDifference" : {"me" : %d, 
-											   "other" : %d}}`,
+						"outcome" : {"me" : "%s", "other" : "%s"}, 
+						"balanceDifference" : {"me" : "%d", 
+											   "other" : "%d"}}`,
 		action2, action1, p2, p1)
 	log.Println("Sent payoffs", p1, p2)
 
@@ -389,6 +389,7 @@ func handleGame(user1, user2 *User, done1, done2 chan int) {
 	bet := 1000
 	p := 0.2
 	E := int(p * 2 * float64(bet))
+	log.Println(E / 2)
 
 	cooperate1, defect1, err1 := masc.GetAction(user1.name)
 	cooperate2, defect2, err2 := masc.GetAction(user2.name)
