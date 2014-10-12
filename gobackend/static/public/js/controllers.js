@@ -55,7 +55,7 @@ function AppCtrl($scope, $q, $timeout) {
 };
 
 var maxCount = 30;
-$scope.minAmount = -1000;
+$scope.minAmount = 1000;
 WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(data) {
@@ -253,3 +253,4 @@ $scope.$watchCollection('signals', function() {
 });
 
 }
+
