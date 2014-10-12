@@ -4,8 +4,8 @@
 
 function AppCtrl($scope, $q, $timeout) {
 
-  $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
   $scope.signals = [];
+  $scope.signalIcons = ['fa-times-circle', 'fa-check-circle', 'fa-smile-o', 'fa-frown-o'];
   $scope.join = false;
   $scope.authenticated = false;
   $scope.matched = 0;
@@ -13,7 +13,8 @@ function AppCtrl($scope, $q, $timeout) {
   $scope.balance = 0;
   $scope.depositaddress = "http://shop.panasonic.com/images/imageNotFound400.jpg";
   $scope.endOfRound = 0;
-
+  var maxCount = 30;
+  $scope.minAmount = 1000;
   $scope.myAction = null;
 
   var WebSocketHandler = {
@@ -54,17 +55,13 @@ function AppCtrl($scope, $q, $timeout) {
   }
 };
 
-var maxCount = 30;
-$scope.minAmount = 1000;
 WebSocketHandler.connect({});
 
 WebSocketHandler.listen(function(data) {
+	
     console.log(data);
 
     $scope.$apply(function() {
-    if(data.command == "signal") {
-      signals.push({'player': opponent, 'signal': data.signal});
-    };
 
     if(data.command == "register") {
       if(data.result == 'success') {
@@ -100,6 +97,10 @@ WebSocketHandler.listen(function(data) {
       }
     };
 
+    if(data.command == "signal") {
+     	$scope.signals.push({'player': 'opponent', 'signal': data.signal});
+    }
+
     if(data.command == "endGame") {
       $scope.round = 0;
       $scope.myAction = null;
@@ -115,7 +116,6 @@ WebSocketHandler.listen(function(data) {
       $scope.counter = minAmount;
     };
   });
-
 });
 
 $scope.$watch('myAction', function(value) {
