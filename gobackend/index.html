@@ -90,7 +90,7 @@
   			<div class="col-md-4 col-xs-4">
   			    <span ng-show="matched" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
-  					<i class="fa fa-check-circle fa-stack-1x" ng-click="sendAction('defect')"></i>
+  					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'coorperate'}" class="fa fa-check-circle fa-stack-1x" ng-click="performAction('coorperate')"></i>
   				</span>
   			</div>
 
@@ -109,6 +109,7 @@
           <p>Selecting an opponent...</p>
 </div>
 
+          <div class="counter">{{ counter }}</div>
   				<div ng-show="matched && join" ang:round:progress ng-model="roundProgresData.label"
           data-round-progress-model="roundProgressData"
   				data-round-progress-width="85"
@@ -119,14 +120,15 @@
   				data-round-progress-outer-circle-background-color="rgba(255, 255, 255, 0.2)"
   				data-round-progress-outer-circle-foreground-color="rgba(255, 255, 255, 0.9)"
   				data-round-progress-inner-circle-color="#505769"
-  				data-round-progress-label-color="#fff"></div>
+  				data-round-progress-label-color="#fff">
+          </div>
 
   				<!-- <input type="number" ng-model="roundProgressData.label"/> -->
   			</div>
   			<div class="col-md-4 col-xs-4">
   				<span ng-show="matched" class="fa-stack fa-4x transparant">
   					<i class="fa fa-circle-thin fa-stack-2x"></i>
-  					<i class="fa fa-times-circle fa-stack-1x" ng-click="sendAction('coorperate')"></i>
+  					<i ng-class="{'nonactive': myAction != null, 'current': myAction && myAction == 'defect'}" class="fa fa-times-circle fa-stack-1x" ng-click="performAction('defect')"></i> 
   				</span>
   			</div>
   		</div>
